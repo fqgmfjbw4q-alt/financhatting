@@ -7,19 +7,22 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__, static_folder='.', template_folder='.')
-app.secret_key = 'finans_gold_master_2026_super_secret_key_123456'
+app.secret_key = os.environ.get('SECRET_KEY', 'finans_gold_master_2026_super_secret_key_123456')
 
+# CORS - Railway için tüm origin'lere izin
 CORS(app, supports_credentials=True, resources={
     r"/api/*": {
-        "origins": ["http://localhost:5000", "http://127.0.0.1:5000"],
-        "methods": ["GET", "POST", "OPTIONS"],
+        "origins": ["*"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
     }
 })
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
+# Railway için geçici klasör kullan
+db_path = '/tmp/database.db' if os.environ.get('RAILWAY_ENVIRONMENT') else os.path.join(basedir, 'database.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -73,9 +76,22 @@ class AssetComment(db.Model):
     rating_sum = db.Column(db.Integer, default=0)
     rating_count = db.Column(db.Integer, default=0)
 
+# Veritabanını başlat
 with app.app_context():
-    db.create_all()
-    print("✅ Veritabanı hazır!")
+    try:
+        db.create_all()
+        print("✅ Veritabanı hazır!")
+    except Exception as e:
+        print(f"⚠️ Veritabanı hatası (normal olabilir): {e}")
+
+# Health check endpoints for Railway
+@app.route('/health')
+def health():
+    return jsonify({'status': 'healthy', 'service': 'finans-network-master'}), 200
+
+@app.route('/api/ping')
+def ping():
+    return jsonify({'message': 'pong', 'timestamp': datetime.now().isoformat()}), 200
 
 # --- SEMBOL HARITALAMA ---
 SYMBOL_MAP = {
