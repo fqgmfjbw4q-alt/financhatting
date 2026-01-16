@@ -19,12 +19,11 @@
             --success: #10b981;
             --danger: #ef4444;
         }
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
             background: var(--bg); 
             color: var(--text); 
             font-family: 'Inter', sans-serif; 
-            margin: 0; 
             padding: 20px; 
             min-height: 100vh;
         }
@@ -37,11 +36,14 @@
             align-items: center; 
             margin-bottom: 25px;
             border: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 15px;
         }
         .nav-links {
             display: flex;
             gap: 20px;
             align-items: center;
+            flex-wrap: wrap;
         }
         .nav-link {
             color: var(--text-muted);
@@ -61,6 +63,34 @@
             color: white;
             background: var(--primary);
         }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
         .icon-btn {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
@@ -79,8 +109,8 @@
             transform: scale(1.1);
         }
         .mini-btn {
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid rgba(0, 212, 255, 0.3);
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
             color: var(--primary);
             padding: 4px 8px;
             border-radius: 6px;
@@ -90,7 +120,7 @@
             font-family: 'Inter', sans-serif;
         }
         .mini-btn:hover {
-            background: rgba(0, 212, 255, 0.2);
+            background: rgba(59, 130, 246, 0.2);
             transform: scale(1.05);
         }
         .mini-btn.delete-btn {
@@ -121,6 +151,7 @@
         .card.clickable:hover { 
             border-color: var(--primary); 
             transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
         }
         .card-logo {
             font-size: 42px;
@@ -184,7 +215,7 @@
             font-weight: 900;
             margin: 30px 0 20px 0;
             text-align: center;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
         }
         .container { 
             max-width: 900px; 
@@ -198,6 +229,7 @@
             border: 1px solid var(--border);
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
         .post:hover {
             border-color: var(--primary);
@@ -218,6 +250,7 @@
             margin-top: 10px;
             font-size: 13px;
             color: #64748b;
+            flex-wrap: wrap;
         }
         .comment {
             background: var(--card);
@@ -230,6 +263,7 @@
         }
         .comment-avatar {
             font-size: 28px;
+            flex-shrink: 0;
         }
         .modal { 
             display: none; 
@@ -264,6 +298,7 @@
             cursor: pointer;
             font-weight: 600;
             transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
         }
         .period-btn:hover {
             background: rgba(59, 130, 246, 0.1);
@@ -279,45 +314,16 @@
             width: 100%; 
             padding: 14px; 
             border-radius: 10px; 
-            border: 1px solid rgba(0, 212, 255, 0.2); 
+            border: 1px solid var(--border); 
             background: rgba(10, 14, 39, 0.8); 
             color: white; 
             margin-bottom: 12px;
             font-family: 'Inter', sans-serif;
+            font-size: 14px;
         }
         input:focus, textarea:focus {
             outline: none;
             border-color: var(--primary);
-        }
-        button {
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover {
-            background: var(--primary-hover);
-        }
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 10px 20px;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        .btn-secondary:hover {
-            border-color: var(--primary);
-            color: var(--primary);
         }
         .section {
             display: none;
@@ -328,7 +334,7 @@
         .profile-header {
             text-align: center;
             padding: 30px;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
             border-radius: 16px;
             margin-bottom: 30px;
         }
@@ -343,8 +349,8 @@
             justify-content: center;
             border-radius: 50%;
             overflow: hidden;
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
-            border: 3px solid rgba(0, 212, 255, 0.3);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border: 3px solid rgba(59, 130, 246, 0.3);
         }
         .profile-avatar img {
             width: 100%;
@@ -358,16 +364,17 @@
             border-radius: 8px;
             transition: all 0.3s;
             border: 2px solid transparent;
+            display: inline-block;
         }
         .avatar-option:hover {
             transform: scale(1.2);
-            background: rgba(0, 212, 255, 0.1);
+            background: rgba(59, 130, 246, 0.1);
         }
         .avatar-option.selected {
-            background: rgba(0, 212, 255, 0.2);
+            background: rgba(59, 130, 246, 0.2);
             border: 2px solid var(--primary);
             transform: scale(1.15);
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
         }
         .star-rating {
             display: inline-flex;
@@ -413,12 +420,42 @@
         .modal-box.fullscreen #candlestick-chart-container {
             height: calc(100vh - 200px) !important;
         }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        @media (max-width: 768px) {
+            .nav {
+                padding: 15px 20px;
+            }
+            .nav-links {
+                width: 100%;
+                justify-content: center;
+            }
+            .grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            .modal-box {
+                width: 95%;
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="nav">
-    <h2 style="color:var(--primary); margin:0;">📊 Finans Network Master</h2>
+    <h2 style="color:var(--primary);">📊 Finans Network Master</h2>
     
     <div class="nav-links" id="nav-links" style="display:none;">
         <span class="nav-link active" onclick="showSection('market')">🏠 Piyasa</span>
@@ -433,16 +470,20 @@
     <div id="user-ui" style="display:none;">
         <span id="user-avatar" style="font-size:24px; margin-right:8px;"></span>
         <b id="user-name" style="color:var(--primary)"></b>
-        <button onclick="logout()" class="btn-secondary" style="margin-left:15px; padding:6px 12px;">🚪 Çıkış</button>
+        <button onclick="logout()" class="btn-secondary" style="margin-left:15px; padding:8px 16px;">🚪 Çıkış</button>
     </div>
 </div>
 
 <div id="market-section" class="section active">
     <h2 class="section-title">💹 Canlı Piyasa Verileri</h2>
-    <div class="grid" id="market-list"></div>
+    <div class="grid" id="market-list">
+        <div class="loading">Yükleniyor</div>
+    </div>
     
     <h2 class="section-title">📅 Ekonomik Takvim & Makro Veriler</h2>
-    <div class="grid" id="economic-calendar" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));"></div>
+    <div class="grid" id="economic-calendar" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="loading">Yükleniyor</div>
+    </div>
 </div>
 
 <div id="feed-section" class="section">
@@ -452,7 +493,9 @@
             <button onclick="submitPost()" class="btn-primary">📤 Paylaş</button>
         </div>
         <h3 style="color: var(--primary); margin-bottom: 20px;">🌐 Küresel Feed</h3>
-        <div id="global-feed"></div>
+        <div id="global-feed">
+            <div class="loading">Yükleniyor</div>
+        </div>
     </div>
 </div>
 
@@ -463,7 +506,7 @@
             <h2 style="color: var(--primary); margin:10px 0;" id="profile-username">@kullanici</h2>
             <p style="color: #94a3b8; margin:5px 0;" id="profile-fullname">Ad Soyad</p>
             <p style="color: #cbd5e1; margin:15px 0;" id="profile-bio">Biyografi</p>
-            <div style="display:flex; gap:30px; justify-content:center; margin-top:20px;">
+            <div style="display:flex; gap:30px; justify-content:center; margin-top:20px; flex-wrap:wrap;">
                 <div><div style="font-size:28px; font-weight:900; color:var(--primary);" id="profile-posts">0</div><div style="font-size:12px; color:#94a3b8;">Gönderi</div></div>
                 <div><div style="font-size:28px; font-weight:900; color:var(--primary);" id="profile-comments">0</div><div style="font-size:12px; color:#94a3b8;">Yorum</div></div>
                 <div><div style="font-size:28px; font-weight:900; color:var(--primary);" id="profile-joined">2026</div><div style="font-size:12px; color:#94a3b8;">Katılım</div></div>
@@ -471,7 +514,9 @@
             <button onclick="openProfileEdit()" class="btn-primary" style="margin-top:20px;">✏️ Profili Düzenle</button>
         </div>
         <h3 style="color: var(--primary); margin: 30px 0 20px 0;">📝 Gönderilerim</h3>
-        <div id="profile-posts-list"></div>
+        <div id="profile-posts-list">
+            <div class="loading">Yükleniyor</div>
+        </div>
     </div>
 </div>
 
@@ -491,15 +536,16 @@
             <button class="period-btn" id="volume-toggle" onclick="toggleVolume()" style="margin-left: 10px;">📊 Hacim: Açık</button>
         </div>
         <div id="candlestick-chart-container" style="height: 500px; width: 100%; background: var(--card); border-radius: 12px; border: 1px solid var(--border);"></div>
-        <div style="margin-top:30px; padding-top:20px; border-top:2px solid rgba(0, 212, 255, 0.2);">
+        <div style="margin-top:30px; padding-top:20px; border-top:2px solid var(--border);">
             <h3 style="color: var(--primary); margin-bottom: 15px;">💬 Yorumlar</h3>
             <div id="comment-box" style="display:none; margin-bottom:20px;">
                 <textarea id="comment-input" placeholder="Bu varlık hakkında ne düşünüyorsun?" rows="2"></textarea>
                 <button onclick="submitComment()" class="btn-primary">💬 Yorum Yap</button>
             </div>
-            <div id="comments-list"></div>
+            <div id="comments-list">
+                <div class="loading">Yükleniyor</div>
+            </div>
         </div>
-        <button onclick="closeAssetModal()" class="btn-secondary" style="margin-top:25px; width:100%; padding:12px; display:none;">✖️ Kapat</button>
     </div>
 </div>
 
@@ -511,15 +557,16 @@
             </div>
         </div>
         <div id="post-detail-content"></div>
-        <div style="margin-top:30px; padding-top:20px; border-top:2px solid rgba(0, 212, 255, 0.2);">
+        <div style="margin-top:30px; padding-top:20px; border-top:2px solid var(--border);">
             <h3 style="color: var(--primary); margin-bottom: 15px;">💬 Yorumlar</h3>
             <div id="post-comment-box" style="display:none; margin-bottom:20px;">
                 <textarea id="post-comment-input" placeholder="Bu gönderi hakkında ne düşünüyorsun?" rows="2"></textarea>
                 <button onclick="submitPostComment()" class="btn-primary">💬 Yorum Yap</button>
             </div>
-            <div id="post-comments-list"></div>
+            <div id="post-comments-list">
+                <div class="loading">Yükleniyor</div>
+            </div>
         </div>
-        <button onclick="closePostModal()" class="btn-secondary" style="margin-top:25px; width:100%; padding:12px; display:none;">✖️ Kapat</button>
     </div>
 </div>
 
@@ -571,887 +618,7 @@
     </div>
 </div>
 
-<script>
-let lightweightChart = null;
-let candlestickSeries = null;
-let volumeSeries = null;
-let currentSymbol = null;
-let currentSymbolName = null;
-let currentPeriod = 'daily';
-let currentUser = null;
-let selectedAvatar = '👤';
-let currentPostId = null;
-let uploadedProfileImage = null;
-let isFullscreen = false;
-let showVolume = true;
-
-function toggleVolume() {
-    showVolume = !showVolume;
-    const btn = document.getElementById('volume-toggle');
-    
-    if (showVolume) {
-        btn.innerText = '📊 Hacim: Açık';
-        btn.style.background = 'rgba(0, 212, 255, 0.1)';
-        btn.style.borderColor = 'rgba(0, 212, 255, 0.3)';
-    } else {
-        btn.innerText = '📊 Hacim: Kapalı';
-        btn.style.background = 'rgba(100, 116, 139, 0.1)';
-        btn.style.borderColor = 'rgba(100, 116, 139, 0.3)';
-    }
-    
-    // Grafiği yeniden yükle
-    loadCandlestickChart(currentSymbol, currentPeriod);
-}
-
-function toggleFullscreen() {
-    const modalBox = document.getElementById('chart-modal-box');
-    const chartContainer = document.getElementById('candlestick-chart-container');
-    
-    isFullscreen = !isFullscreen;
-    
-    if (isFullscreen) {
-        modalBox.classList.add('fullscreen');
-    } else {
-        modalBox.classList.remove('fullscreen');
-    }
-    
-    // Grafik boyutunu güncelle
-    setTimeout(() => {
-        if (lightweightChart) {
-            const newHeight = isFullscreen ? window.innerHeight - 200 : 500;
-            lightweightChart.applyOptions({
-                width: chartContainer.clientWidth,
-                height: newHeight
-            });
-            lightweightChart.timeScale().fitContent();
-        }
-    }, 100);
-}
-
-function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    // Dosya boyutu kontrolü (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-        alert('Fotoğraf boyutu 2MB\'dan küçük olmalı!');
-        return;
-    }
-    
-    // Dosya tipi kontrolü
-    if (!file.type.startsWith('image/')) {
-        alert('Lütfen geçerli bir resim dosyası seçin!');
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        uploadedProfileImage = e.target.result;
-        document.getElementById('preview-img').src = uploadedProfileImage;
-        document.getElementById('image-preview').style.display = 'block';
-        
-        // Emoji avatarları deselect et
-        document.querySelectorAll('.avatar-option').forEach(opt => {
-            opt.classList.remove('selected');
-        });
-    };
-    reader.readAsDataURL(file);
-}
-
-function removeProfileImage() {
-    uploadedProfileImage = null;
-    document.getElementById('image-preview').style.display = 'none';
-    document.getElementById('profile-image-input').value = '';
-}
-
-function createStarRating(itemId, itemType, currentAvg, ratingCount) {
-    let stars = '';
-    for(let i = 1; i <= 5; i++) {
-        const filled = i <= Math.round(currentAvg) ? 'filled' : '';
-        stars += `<span class="star ${filled}" onmouseover="previewRating(this, ${i})" onmouseout="resetRating(this)" onclick="submitRating('${itemType}', ${itemId}, ${i})" title="⭐ ${i} yıldız ver">★</span>`;
-    }
-    const avgText = currentAvg > 0 ? currentAvg.toFixed(1) : '0.0';
-    const countText = ratingCount > 0 ? `<span class="rating-count" title="${ratingCount} kişi oy verdi">(${avgText} • ${ratingCount} oy)</span>` : '<span class="rating-count">(Henüz oy yok)</span>';
-    return `<div class="star-rating" data-avg="${currentAvg}" data-count="${ratingCount}">${stars}${countText}</div>`;
-}
-
-function previewRating(star, rating) {
-    const container = star.parentElement;
-    const stars = container.querySelectorAll('.star');
-    stars.forEach((s, idx) => {
-        if(idx < rating) {
-            s.classList.add('filled');
-        } else {
-            s.classList.remove('filled');
-        }
-    });
-}
-
-function resetRating(star) {
-    const container = star.parentElement;
-    const currentAvg = parseFloat(container.dataset.avg) || 0;
-    const stars = container.querySelectorAll('.star');
-    stars.forEach((s, idx) => {
-        if(idx < Math.round(currentAvg)) {
-            s.classList.add('filled');
-        } else {
-            s.classList.remove('filled');
-        }
-    });
-}
-
-function submitRating(itemType, itemId, rating) {
-    let endpoint = '';
-    let payload = { rating: rating };
-    
-    if(itemType === 'post') {
-        endpoint = '/api/rate-post';
-        payload.post_id = itemId;
-    } else if(itemType === 'post-comment') {
-        endpoint = '/api/rate-post-comment';
-        payload.comment_id = itemId;
-    } else if(itemType === 'asset-comment') {
-        endpoint = '/api/rate-asset-comment';
-        payload.comment_id = itemId;
-    }
-    
-    fetch(endpoint, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) {
-            alert(d.error);
-        } else {
-            // Başarılı - sayfayı güncelle
-            if(itemType === 'post') {
-                fetchFeed();
-            } else if(itemType === 'post-comment') {
-                loadPostComments(currentPostId);
-            } else if(itemType === 'asset-comment') {
-                loadComments(currentSymbol);
-            }
-        }
-    })
-    .catch(err => alert('Oy kullanılamadı!'));
-}
-
-function logout() {
-    fetch('/api/logout', {method: 'POST'})
-        .then(() => location.reload())
-        .catch(err => alert('Çıkış yapılamadı!'));
-}
-
-function showSection(section) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    document.getElementById(section + '-section').classList.add('active');
-    event.target.classList.add('active');
-    if(section === 'profile') loadProfile();
-    else if(section === 'feed') fetchFeed();
-}
-
-function fetchEconomicCalendar() {
-    fetch('/api/economic-calendar')
-        .then(r => r.json())
-        .then(data => {
-            let html = "";
-            for(let key in data) {
-                const item = data[key];
-                html += `<div class="economic-card" style="border-color: ${item.color};">
-                    <div class="economic-icon">${item.icon}</div>
-                    <div class="economic-name">${item.name}</div>
-                    <div class="economic-value" style="color: ${item.color};">${item.current}</div>
-                    <div class="economic-date">📅 ${item.next_meeting || item.next_release}</div>
-                    <div class="economic-description">${item.description}</div>
-                </div>`;
-            }
-            document.getElementById('economic-calendar').innerHTML = html;
-        })
-        .catch(err => console.error('Economic calendar error:', err));
-}
-
-function fetchMarket() {
-    fetch('/api/market-data')
-        .then(r => r.json())
-        .then(data => {
-            let html = "";
-            for(let key in data) {
-                html += `<div class="card clickable" onclick="openAsset('${key}', '${data[key].name}')">
-                    <div class="card-logo">${data[key].logo}</div>
-                    <div class="card-name">${data[key].name}</div>
-                    <div class="price">${data[key].value}</div>
-                </div>`;
-            }
-            document.getElementById('market-list').innerHTML = html;
-        })
-        .catch(err => console.error('Market error:', err));
-}
-
-function fetchFeed() {
-    fetch('/api/feed')
-        .then(r => r.json())
-        .then(data => {
-            let html = "";
-            data.forEach(p => {
-                const isOwner = currentUser && p.user === currentUser;
-                const actionsHtml = isOwner ? `
-                    <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 5px;">
-                        <button onclick="event.stopPropagation(); editPost(${p.id}, '${p.content.replace(/'/g, "\\'")}');" class="mini-btn" title="Düzenle">✏️</button>
-                        <button onclick="event.stopPropagation(); deletePost(${p.id});" class="mini-btn delete-btn" title="Sil">🗑️</button>
-                    </div>
-                ` : '';
-                
-                html += `<div class="post" onclick="openPostDetail(${p.id})" style="position: relative;">
-                    ${actionsHtml}
-                    <div class="post-header">
-                        <div class="post-avatar">${p.avatar}</div>
-                        <div style="flex:1;"><b style="color:var(--primary);">@${p.user}</b><div style="color:#64748b; font-size:12px;">${p.timestamp}</div></div>
-                    </div>
-                    <p style="margin:0; color:#cbd5e1;">${p.content}</p>
-                    <div class="post-stats">
-                        <div>💬 ${p.comment_count} yorum</div>
-                        <div onclick="event.stopPropagation();">${createStarRating(p.id, 'post', p.rating_avg, p.rating_count)}</div>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('global-feed').innerHTML = html || '<p style="text-align:center; color:#64748b;">Henüz gönderi yok. İlk sen ol! 🚀</p>';
-        })
-        .catch(err => console.error('Feed error:', err));
-}
-
-function loadProfile() {
-    if(!currentUser) return;
-    fetch(`/api/profile/${currentUser}`)
-        .then(r => r.json())
-        .then(data => {
-            const avatarElement = document.getElementById('profile-avatar');
-            if (data.profile_image) {
-                avatarElement.innerHTML = `<img src="${data.profile_image}" alt="Profile">`;
-            } else {
-                avatarElement.innerHTML = data.avatar;
-            }
-            
-            document.getElementById('profile-username').innerText = '@' + data.username;
-            document.getElementById('profile-fullname').innerText = data.full_name;
-            
-            // Bio - boşsa gösterme
-            const bioElement = document.getElementById('profile-bio');
-            if (data.bio && data.bio.trim()) {
-                bioElement.innerText = data.bio;
-                bioElement.style.display = 'block';
-            } else {
-                bioElement.style.display = 'none';
-            }
-            
-            document.getElementById('profile-posts').innerText = data.total_posts;
-            document.getElementById('profile-comments').innerText = data.total_comments;
-            document.getElementById('profile-joined').innerText = data.joined_date.split('-')[0];
-            
-            let postsHtml = "";
-            data.posts.forEach(p => {
-                postsHtml += `<div class="post" onclick="openPostDetail(${p.id})">
-                    <div class="post-header">
-                        <div class="post-avatar">${p.avatar}</div>
-                        <div style="flex:1;"><b style="color:var(--primary);">@${data.username}</b><div style="color:#64748b; font-size:12px;">${p.timestamp}</div></div>
-                    </div>
-                    <p style="margin:0; color:#cbd5e1;">${p.content}</p>
-                    <div class="post-stats">
-                        <div>💬 ${p.comment_count} yorum</div>
-                        <div onclick="event.stopPropagation();">${createStarRating(p.id, 'post', p.rating_avg || 0, p.rating_count || 0)}</div>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('profile-posts-list').innerHTML = postsHtml || '<p style="text-align:center; color:#64748b;">Henüz gönderi yok.</p>';
-        })
-        .catch(err => console.error('Profile error:', err));
-}
-
-function openPostDetail(postId) {
-    currentPostId = postId;
-    fetch('/api/feed')
-        .then(r => r.json())
-        .then(data => {
-            const post = data.find(p => p.id === postId);
-            if(!post) return;
-            document.getElementById('post-detail-content').innerHTML = `
-                <div class="post" style="cursor:default;">
-                    <div class="post-header">
-                        <div class="post-avatar">${post.avatar}</div>
-                        <div style="flex:1;"><b style="color:var(--primary);">@${post.user}</b><div style="color:#64748b; font-size:12px;">${post.timestamp}</div></div>
-                    </div>
-                    <p style="margin:0; color:#cbd5e1; font-size:16px;">${post.content}</p>
-                    <div class="post-stats">
-                        <div>💬 ${post.comment_count} yorum</div>
-                        <div>${createStarRating(post.id, 'post', post.rating_avg, post.rating_count)}</div>
-                    </div>
-                </div>
-            `;
-            document.getElementById('post-modal').style.display = 'flex';
-            loadPostComments(postId);
-        });
-}
-
-function loadPostComments(postId) {
-    fetch(`/api/post-comments/${postId}`)
-        .then(r => r.json())
-        .then(data => {
-            let html = "";
-            data.forEach(c => {
-                const isOwner = currentUser && c.username === currentUser;
-                const deleteBtn = isOwner ? `<button onclick="deletePostComment(${c.id})" class="mini-btn delete-btn" style="margin-left: auto;" title="Sil">🗑️</button>` : '';
-                
-                html += `<div class="comment">
-                    <div class="comment-avatar">${c.avatar}</div>
-                    <div style="flex:1;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <div style="display:flex; gap:10px; align-items:center; flex:1;">
-                                <b style="color:var(--primary);">@${c.username}</b>
-                                <span style="color:#64748b; font-size:11px;">${c.timestamp}</span>
-                            </div>
-                            ${deleteBtn}
-                        </div>
-                        <p style="margin:0; color:#cbd5e1; font-size:14px;">${c.content}</p>
-                        <div style="margin-top:8px;">${createStarRating(c.id, 'post-comment', c.rating_avg, c.rating_count)}</div>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('post-comments-list').innerHTML = html || '<p style="text-align:center; color:#64748b;">Henüz yorum yok. İlk yorumu sen yap! 💬</p>';
-        })
-        .catch(err => console.error('Comments error:', err));
-}
-
-function submitPostComment() {
-    const content = document.getElementById('post-comment-input').value;
-    if(!content.trim()) {
-        alert('Lütfen bir yorum yazın!');
-        return;
-    }
-    fetch('/api/post-comment', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({post_id: currentPostId, content: content})
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) alert(d.error);
-        else {
-            document.getElementById('post-comment-input').value = '';
-            loadPostComments(currentPostId);
-            fetchFeed();
-        }
-    })
-    .catch(err => alert('Yorum paylaşılamadı!'));
-}
-
-function closePostModal() {
-    document.getElementById('post-modal').style.display = 'none';
-}
-
-function openAsset(symbol, name) {
-    currentSymbol = symbol;
-    currentSymbolName = name;
-    document.getElementById('asset-modal').style.display = 'flex';
-    document.getElementById('modal-title').innerText = name + ' - Mum Grafiği';
-    loadCandlestickChart(symbol, 'daily');
-    loadComments(symbol);
-}
-
-function changePeriod(period) {
-    document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    loadCandlestickChart(currentSymbol, period);
-}
-
-function loadCandlestickChart(symbol, period) {
-    fetch(`/api/candlestick/${symbol}?period=${period}`)
-        .then(r => r.json())
-        .then(data => {
-            if(data.error) {
-                alert('Veri yüklenemedi');
-                return;
-            }
-            
-            const container = document.getElementById('candlestick-chart-container');
-            
-            // Mevcut grafiği temizle
-            if (lightweightChart) {
-                lightweightChart.remove();
-            }
-            
-            // Yeni grafik oluştur
-            lightweightChart = LightweightCharts.createChart(container, {
-                width: container.clientWidth,
-                height: 500,
-                layout: {
-                    background: { color: '#1c2128' },
-                    textColor: '#8b98a5',
-                },
-                grid: {
-                    vertLines: { color: '#30363d' },
-                    horzLines: { color: '#30363d' },
-                },
-                crosshair: {
-                    mode: LightweightCharts.CrosshairMode.Normal,
-                    vertLine: {
-                        color: '#3b82f6',
-                        width: 1,
-                        style: LightweightCharts.LineStyle.Solid,
-                        labelBackgroundColor: '#3b82f6',
-                    },
-                    horzLine: {
-                        color: '#3b82f6',
-                        width: 1,
-                        style: LightweightCharts.LineStyle.Solid,
-                        labelBackgroundColor: '#3b82f6',
-                    },
-                },
-                rightPriceScale: {
-                    borderColor: '#30363d',
-                    scaleMargins: {
-                        top: 0.05,
-                        bottom: 0.20,
-                    },
-                },
-                timeScale: {
-                    borderColor: '#30363d',
-                    timeVisible: true,
-                    secondsVisible: false,
-                    rightOffset: 12,
-                    barSpacing: 12,
-                    minBarSpacing: 8,
-                },
-                localization: {
-                    locale: 'tr-TR',
-                    priceFormatter: (price) => price.toFixed(2) + ' ₺',
-                },
-            });
-            
-            // Candlestick serisi ekle
-            candlestickSeries = lightweightChart.addCandlestickSeries({
-                upColor: '#10b981',
-                downColor: '#ef4444',
-                borderUpColor: '#10b981',
-                borderDownColor: '#ef4444',
-                wickUpColor: '#10b981',
-                wickDownColor: '#ef4444',
-            });
-            
-            // Veriyi formatla
-            const chartData = data.data.map(d => ({
-                time: d.time,
-                open: d.open,
-                high: d.high,
-                low: d.low,
-                close: d.close
-            }));
-            
-            candlestickSeries.setData(chartData);
-            
-            // Tooltip için legend oluştur
-            const toolTipDiv = document.createElement('div');
-            toolTipDiv.style.cssText = `
-                position: absolute;
-                display: none;
-                padding: 12px;
-                box-sizing: border-box;
-                font-size: 13px;
-                text-align: left;
-                z-index: 1000;
-                top: 12px;
-                left: 12px;
-                pointer-events: none;
-                background: rgba(28, 33, 40, 0.98);
-                border: 1px solid #30363d;
-                border-radius: 8px;
-                color: #e1e8ed;
-                font-family: 'Inter', sans-serif;
-            `;
-            container.appendChild(toolTipDiv);
-            
-            // Crosshair hareket event'i
-            lightweightChart.subscribeCrosshairMove(param => {
-                if (!param.time || !param.point || param.point.x < 0 || param.point.y < 0) {
-                    toolTipDiv.style.display = 'none';
-                    return;
-                }
-                
-                const data = param.seriesData.get(candlestickSeries);
-                if (data) {
-                    toolTipDiv.style.display = 'block';
-                    const price = data.close;
-                    const dateStr = new Date(param.time * 1000).toLocaleDateString('tr-TR', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    toolTipDiv.innerHTML = `
-                        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${currentSymbolName}</div>
-                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">${dateStr}</div>
-                        <div style="display: grid; grid-template-columns: auto auto; gap: 8px 12px; font-size: 12px;">
-                            <span style="color: #94a3b8;">A:</span><span style="color: #00d4ff; font-weight: 600;">${data.open.toFixed(2)}</span>
-                            <span style="color: #94a3b8;">Y:</span><span style="color: #10b981; font-weight: 600;">${data.high.toFixed(2)}</span>
-                            <span style="color: #94a3b8;">D:</span><span style="color: #ef4444; font-weight: 600;">${data.low.toFixed(2)}</span>
-                            <span style="color: #94a3b8;">K:</span><span style="color: ${data.close >= data.open ? '#10b981' : '#ef4444'}; font-weight: 600;">${data.close.toFixed(2)}</span>
-                        </div>
-                    `;
-                }
-            });
-            
-            // Volume serisi ekle (opsiyonel)
-            if (showVolume && data.data[0].volume > 0) {
-                volumeSeries = lightweightChart.addHistogramSeries({
-                    color: 'rgba(0, 212, 255, 0.3)',
-                    priceFormat: {
-                        type: 'volume',
-                    },
-                    priceScaleId: '',
-                    scaleMargins: {
-                        top: 0.85,
-                        bottom: 0.01,
-                    },
-                });
-                
-                const volumeData = data.data.map(d => ({
-                    time: d.time,
-                    value: d.volume,
-                    color: d.close >= d.open ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'
-                }));
-                
-                volumeSeries.setData(volumeData);
-            } else {
-                volumeSeries = null;
-            }
-            
-            // Grafiği sığdır
-            lightweightChart.timeScale().fitContent();
-            
-            // Resize handler
-            const resizeObserver = new ResizeObserver(entries => {
-                if (lightweightChart && entries.length > 0) {
-                    const { width } = entries[0].contentRect;
-                    lightweightChart.applyOptions({ width });
-                }
-            });
-            resizeObserver.observe(container);
-        })
-        .catch(err => {
-            console.error('Grafik hatası:', err);
-            alert('Grafik yüklenemedi!');
-        });
-}
-
-function loadComments(symbol) {
-    fetch(`/api/asset-comments/${symbol}`)
-        .then(r => r.json())
-        .then(data => {
-            let html = "";
-            data.forEach(c => {
-                const isOwner = currentUser && c.username === currentUser;
-                const deleteBtn = isOwner ? `<button onclick="deleteAssetComment(${c.id})" class="mini-btn delete-btn" style="margin-left: auto;" title="Sil">🗑️</button>` : '';
-                
-                html += `<div class="comment">
-                    <div class="comment-avatar">${c.avatar}</div>
-                    <div style="flex:1;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <div style="display:flex; gap:10px; align-items:center; flex:1;">
-                                <b style="color:var(--primary);">@${c.username}</b>
-                                <span style="color:#64748b; font-size:11px;">${c.timestamp}</span>
-                            </div>
-                            ${deleteBtn}
-                        </div>
-                        <p style="margin:0; color:#cbd5e1; font-size:14px;">${c.content}</p>
-                        <div style="margin-top:8px;">${createStarRating(c.id, 'asset-comment', c.rating_avg, c.rating_count)}</div>
-                    </div>
-                </div>`;
-            });
-            document.getElementById('comments-list').innerHTML = html || '<p style="text-align:center; color:#64748b;">Henüz yorum yok 💬</p>';
-        });
-}
-
-function submitComment() {
-    const content = document.getElementById('comment-input').value;
-    if(!content.trim()) {
-        alert('Lütfen bir yorum yazın!');
-        return;
-    }
-    fetch('/api/asset-comment', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({symbol: currentSymbol, content: content})
-    })
-    .then(() => {
-        document.getElementById('comment-input').value = '';
-        loadComments(currentSymbol);
-    })
-    .catch(err => alert('Yorum paylaşılamadı!'));
-}
-
-function closeAssetModal() {
-    document.getElementById('asset-modal').style.display = 'none';
-    const modalBox = document.getElementById('chart-modal-box');
-    modalBox.classList.remove('fullscreen');
-    isFullscreen = false;
-}
-
-function openProfileEdit() {
-    document.getElementById('profile-edit-modal').style.display = 'flex';
-    document.getElementById('edit-bio').value = document.getElementById('profile-bio').innerText;
-    
-    // Reset image upload
-    uploadedProfileImage = null;
-    document.getElementById('image-preview').style.display = 'none';
-    document.getElementById('profile-image-input').value = '';
-    
-    // Mevcut avatarı seçili göster
-    const currentAvatar = document.getElementById('profile-avatar').innerText;
-    selectedAvatar = currentAvatar;
-    
-    // Mevcut profil fotoğrafını kontrol et
-    fetch(`/api/profile/${currentUser}`)
-        .then(r => r.json())
-        .then(data => {
-            if (data.profile_image) {
-                uploadedProfileImage = data.profile_image;
-                document.getElementById('preview-img').src = data.profile_image;
-                document.getElementById('image-preview').style.display = 'block';
-            }
-        });
-    
-    // Bir sonraki frame'de çalıştır (DOM yüklendikten sonra)
-    setTimeout(() => {
-        document.querySelectorAll('.avatar-option').forEach(opt => {
-            opt.classList.remove('selected');
-            if(opt.innerText === currentAvatar) {
-                opt.classList.add('selected');
-            }
-        });
-    }, 100);
-}
-
-function closeProfileEdit() {
-    document.getElementById('profile-edit-modal').style.display = 'none';
-}
-
-function selectAvatar(emoji) {
-    selectedAvatar = emoji;
-    // Tüm avatar seçeneklerinden selected class'ını kaldır
-    document.querySelectorAll('.avatar-option').forEach(opt => {
-        opt.classList.remove('selected');
-    });
-    // Tıklanan avatara selected class'ı ekle
-    event.target.classList.add('selected');
-}
-
-function saveProfile() {
-    const payload = {
-        bio: document.getElementById('edit-bio').value
-    };
-    
-    if (uploadedProfileImage) {
-        // Profil fotoğrafı yüklendiyse
-        payload.profile_image = uploadedProfileImage;
-        payload.avatar = ''; // Emoji avatarı temizle
-    } else if (selectedAvatar) {
-        // Emoji avatar seçildiyse
-        payload.avatar = selectedAvatar;
-        payload.remove_image = true; // Mevcut fotoğrafı kaldır
-    }
-    
-    fetch('/api/profile/update', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) {
-            alert(d.error);
-        } else {
-            closeProfileEdit();
-            loadProfile();
-            if (uploadedProfileImage) {
-                document.getElementById('user-avatar').innerHTML = `<img src="${uploadedProfileImage}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">`;
-            } else {
-                document.getElementById('user-avatar').innerText = selectedAvatar;
-            }
-        }
-    })
-    .catch(err => alert('Profil güncellenemedi!'));
-}
-
-function closeAuthModal() {
-    document.getElementById('auth-modal').style.display = 'none';
-}
-
-function openAuth(mode) {
-    document.getElementById('auth-modal').style.display = 'flex';
-    document.getElementById('reg-fields').style.display = mode === 'reg' ? 'block' : 'none';
-    document.getElementById('auth-title').innerText = mode === 'reg' ? '🎯 Yeni Hesap' : '🔐 Giriş Yap';
-    document.getElementById('af-btn').innerText = mode === 'reg' ? 'Kaydol' : 'Giriş Yap';
-    document.getElementById('af-btn').onclick = () => {
-        const payload = {
-            full_name: document.getElementById('af-fn').value,
-            username: document.getElementById('af-un').value,
-            password: document.getElementById('af-ps').value
-        };
-        fetch('/api/' + (mode === 'reg' ? 'register' : 'login'), {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        })
-        .then(r => r.json())
-        .then(d => {
-            if(d.error) alert('❌ ' + d.error);
-            else location.reload();
-        })
-        .catch(err => alert('Bağlantı hatası!'));
-    };
-}
-
-function submitPost() {
-    const content = document.getElementById('post-input').value;
-    if(!content.trim()) {
-        alert('Lütfen bir içerik yazın!');
-        return;
-    }
-    fetch('/api/post', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({content: content})
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) alert(d.error);
-        else {
-            document.getElementById('post-input').value = '';
-            fetchFeed();
-        }
-    })
-    .catch(err => alert('Gönderi paylaşılamadı!'));
-}
-
-function deletePost(postId) {
-    if(!confirm('Bu gönderiyi silmek istediğinize emin misiniz?')) return;
-    
-    fetch(`/api/post/${postId}`, {
-        method: 'DELETE',
-        headers: {'Content-Type': 'application/json'}
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) alert(d.error);
-        else {
-            fetchFeed();
-            loadProfile();
-        }
-    })
-    .catch(err => alert('Gönderi silinemedi!'));
-}
-
-function editPost(postId, currentContent) {
-    const newContent = prompt('Gönderiyi düzenle:', currentContent);
-    if(!newContent || !newContent.trim()) return;
-    
-    fetch(`/api/post/${postId}`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({content: newContent})
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) alert(d.error);
-        else {
-            fetchFeed();
-            loadProfile();
-        }
-    })
-    .catch(err => alert('Gönderi düzenlenemedi!'));
-}
-
-function deletePostComment(commentId) {
-    if(!confirm('Bu yorumu silmek istediğinize emin misiniz?')) return;
-    
-    fetch(`/api/post-comment/${commentId}`, {
-        method: 'DELETE',
-        headers: {'Content-Type': 'application/json'}
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) alert(d.error);
-        else {
-            loadPostComments(currentPostId);
-            fetchFeed();
-        }
-    })
-    .catch(err => alert('Yorum silinemedi!'));
-}
-
-function deleteAssetComment(commentId) {
-    if(!confirm('Bu yorumu silmek istediğinize emin misiniz?')) return;
-    
-    fetch(`/api/asset-comment/${commentId}`, {
-        method: 'DELETE',
-        headers: {'Content-Type': 'application/json'}
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.error) alert(d.error);
-        else loadComments(currentSymbol);
-    })
-    .catch(err => alert('Yorum silinemedi!'));
-}
-
-fetch('/api/check-session')
-    .then(r => r.json())
-    .then(d => {
-        if(d.logged_in) {
-            currentUser = d.username;
-            document.getElementById('auth-ui').style.display = 'none';
-            document.getElementById('user-ui').style.display = 'block';
-            document.getElementById('nav-links').style.display = 'flex';
-            document.getElementById('post-box').style.display = 'block';
-            document.getElementById('comment-box').style.display = 'block';
-            document.getElementById('post-comment-box').style.display = 'block';
-            document.getElementById('user-name').innerText = '@' + d.username;
-            document.getElementById('user-avatar').innerText = d.avatar;
-        }
-    });
-
-fetchEconomicCalendar();
-fetchMarket();
-fetchFeed();
-setInterval(fetchEconomicCalendar, 3600000); // Her saatte bir güncelle
-setInterval(fetchMarket, 30000);
-setInterval(fetchFeed, 60000);
-
-// Klavye kısayolları
-document.addEventListener('keydown', (e) => {
-    // ESC tuşu - modal'ı kapat
-    if (e.key === 'Escape') {
-        const assetModal = document.getElementById('asset-modal');
-        const postModal = document.getElementById('post-modal');
-        if (assetModal.style.display === 'flex') {
-            closeAssetModal();
-        } else if (postModal.style.display === 'flex') {
-            closePostModal();
-        }
-    }
-    // F tuşu - fullscreen toggle (sadece grafik modalı açıkken)
-    if (e.key === 'f' || e.key === 'F') {
-        const assetModal = document.getElementById('asset-modal');
-        if (assetModal.style.display === 'flex') {
-            e.preventDefault();
-            toggleFullscreen();
-        }
-    }
-});
-</script>
+<script src="app.js"></script>
 
 </body>
 </html>
