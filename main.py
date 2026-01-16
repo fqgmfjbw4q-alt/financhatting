@@ -7,22 +7,19 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__, static_folder='.', template_folder='.')
-app.secret_key = os.environ.get('SECRET_KEY', 'finans_gold_master_2026_super_secret_key_123456')
+app.secret_key = 'finans_gold_master_2026_super_secret_key_123456'
 
-# CORS - Railway için tüm origin'lere izin
 CORS(app, supports_credentials=True, resources={
     r"/api/*": {
-        "origins": ["*"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "origins": ["http://localhost:5000", "http://127.0.0.1:5000"],
+        "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
     }
 })
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-# Railway için geçici klasör kullan
-db_path = '/tmp/database.db' if os.environ.get('RAILWAY_ENVIRONMENT') else os.path.join(basedir, 'database.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
@@ -37,7 +34,7 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
     bio = db.Column(db.String(500), default='')
     avatar = db.Column(db.String(10), default='👤')
-    profile_image = db.Column(db.Text, default=None)
+    profile_image = db.Column(db.Text, default=None)  # Base64 encoded image
     joined_date = db.Column(db.DateTime, default=datetime.now)
     total_posts = db.Column(db.Integer, default=0)
     total_comments = db.Column(db.Integer, default=0)
@@ -76,22 +73,9 @@ class AssetComment(db.Model):
     rating_sum = db.Column(db.Integer, default=0)
     rating_count = db.Column(db.Integer, default=0)
 
-# Veritabanını başlat
 with app.app_context():
-    try:
-        db.create_all()
-        print("✅ Veritabanı hazır!")
-    except Exception as e:
-        print(f"⚠️ Veritabanı hatası (normal olabilir): {e}")
-
-# Health check endpoints for Railway
-@app.route('/health')
-def health():
-    return jsonify({'status': 'healthy', 'service': 'finans-network-master'}), 200
-
-@app.route('/api/ping')
-def ping():
-    return jsonify({'message': 'pong', 'timestamp': datetime.now().isoformat()}), 200
+    db.create_all()
+    print("✅ Veritabanı hazır!")
 
 # --- SEMBOL HARITALAMA ---
 SYMBOL_MAP = {
@@ -107,6 +91,7 @@ SYMBOL_MAP = {
 def get_economic_calendar():
     try:
         print("📅 Ekonomik takvim istendi...")
+        # Bu veriler gerçek API'lerden çekilebilir, şimdilik güncel tahminler
         calendar = {
             'fed_rate': {
                 'name': 'FED Faiz Oranı',
@@ -170,16 +155,16 @@ def get_market_data():
         print("📊 Market data istendi...")
         symbols = ["GC=F", "USDTRY=X", "BTC-USD", "ETH-USD"]
         data = yf.download(symbols, period="1d", interval="1m", progress=False, auto_adjust=True)
-
+        
         last_row = data['Close'].ffill().iloc[-1]
-
+        
         usd_val = float(last_row['USDTRY=X'])
         ons_val = float(last_row['GC=F'])
         btc_val = float(last_row['BTC-USD'])
         eth_val = float(last_row['ETH-USD'])
-
+        
         gram_gold = (ons_val / 31.1035) * usd_val
-
+        
         result = {
             'gold_ons': {'name': 'Altın Ons', 'value': f"${ons_val:,.2f}", 'logo': '🟡'},
             'gold_gram': {'name': 'Gram Altın', 'value': f"{gram_gold:,.2f} ₺", 'logo': '🟨'},
@@ -206,23 +191,23 @@ def get_candlestick(symbol):
         print(f"📈 Candlestick istendi: {symbol}")
         period_type = request.args.get('period', 'daily')
         yahoo_symbol = SYMBOL_MAP.get(symbol, 'BTC-USD')
-
+        
         if period_type == 'daily':
-            period = "1y"
+            period = "1y"  # 1 yıl günlük
             interval = "1d"
         elif period_type == 'weekly':
-            period = "3y"
+            period = "3y"  # 3 yıl haftalık
             interval = "1wk"
-        else:
-            period = "5y"
+        else:  # monthly
+            period = "5y"  # 5 yıl aylık
             interval = "1mo"
-
+        
         ticker = yf.Ticker(yahoo_symbol)
         hist = ticker.history(period=period, interval=interval)
-
+        
         if hist.empty:
             return jsonify({'error': 'Veri bulunamadı'}), 404
-
+        
         if symbol == 'gold_gram':
             try:
                 usd_data = yf.download("USDTRY=X", period="1d", interval="1m", progress=False)
@@ -233,7 +218,7 @@ def get_candlestick(symbol):
                 hist['Close'] = (hist['Close'] / 31.1035) * usd_rate
             except:
                 pass
-
+        
         candlestick_data = []
         for index, row in hist.iterrows():
             candlestick_data.append({
@@ -244,14 +229,14 @@ def get_candlestick(symbol):
                 'close': round(float(row['Close']), 2),
                 'volume': int(row['Volume']) if 'Volume' in row else 0
             })
-
+        
         print(f"✅ Candlestick başarılı: {len(candlestick_data)} veri")
         return jsonify({
             'symbol': symbol,
             'period': period_type,
             'data': candlestick_data
         })
-
+        
     except Exception as e:
         print(f"❌ Candlestick hatası: {e}")
         return jsonify({'error': str(e)}), 500
@@ -261,22 +246,22 @@ def get_candlestick(symbol):
 def register():
     if request.method == 'OPTIONS':
         return '', 204
-
+    
     try:
         data = request.json
         print(f"📝 Kayıt denemesi: {data.get('username')}")
-
+        
         if not data.get('username') or not data.get('password'):
             return jsonify({'error': 'Kullanıcı adı ve şifre gerekli'}), 400
-
+        
         if User.query.filter_by(username=data['username']).first():
             print(f"❌ Kullanıcı adı alınmış: {data['username']}")
             return jsonify({'error': 'Bu kullanıcı adı alınmış'}), 400
-
+        
         avatars = ['👤', '😎', '🚀', '💎', '🎯', '⚡', '🔥', '🌟', '💰', '🦁']
         import random
         avatar = random.choice(avatars)
-
+        
         user = User(
             full_name=data.get('full_name', 'İsimsiz Kullanıcı'),
             username=data['username'],
@@ -285,7 +270,7 @@ def register():
         )
         db.session.add(user)
         db.session.commit()
-
+        
         print(f"✅ Kayıt başarılı: {data['username']}")
         return jsonify({'success': True, 'message': 'Kayıt başarılı!'})
     except Exception as e:
@@ -297,23 +282,23 @@ def register():
 def login():
     if request.method == 'OPTIONS':
         return '', 204
-
+    
     try:
         data = request.json
         print(f"🔐 Giriş denemesi: {data.get('username')}")
-
+        
         if not data.get('username') or not data.get('password'):
             return jsonify({'error': 'Kullanıcı adı ve şifre gerekli'}), 400
-
+        
         u = User.query.filter_by(username=data['username']).first()
-
+        
         if u and check_password_hash(u.password, data['password']):
             session['user_id'] = u.id
             session['username'] = u.username
             session['avatar'] = u.avatar
             print(f"✅ Giriş başarılı: {u.username}")
             return jsonify({'username': u.username, 'avatar': u.avatar})
-
+        
         print(f"❌ Giriş başarısız: {data.get('username')}")
         return jsonify({'error': 'Kullanıcı adı veya şifre hatalı'}), 401
     except Exception as e:
@@ -342,9 +327,9 @@ def get_profile(username):
         user = User.query.filter_by(username=username).first()
         if not user:
             return jsonify({'error': 'Kullanıcı bulunamadı'}), 404
-
+        
         posts = Post.query.filter_by(user_id=user.id).order_by(Post.timestamp.desc()).all()
-
+        
         return jsonify({
             'username': user.username,
             'full_name': user.full_name,
@@ -373,21 +358,22 @@ def get_profile(username):
 def update_profile():
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         data = request.json
         user = User.query.get(session['user_id'])
-
+        
         if 'bio' in data:
             user.bio = data['bio']
         if 'avatar' in data:
             user.avatar = data['avatar']
             session['avatar'] = data['avatar']
         if 'profile_image' in data:
+            # Base64 image data
             user.profile_image = data['profile_image']
         if 'remove_image' in data and data['remove_image']:
             user.profile_image = None
-
+        
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -399,14 +385,14 @@ def update_profile():
 def add_post():
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         data = request.json
         print(f"📝 Yeni gönderi: {session['username']}")
-
+        
         post = Post(
             content=data['content'],
             user_id=session['user_id'],
@@ -414,10 +400,10 @@ def add_post():
             avatar=session.get('avatar', '👤')
         )
         db.session.add(post)
-
+        
         user = User.query.get(session['user_id'])
         user.total_posts += 1
-
+        
         db.session.commit()
         print(f"✅ Gönderi eklendi: ID {post.id}")
         return jsonify({'success': True, 'post_id': post.id})
@@ -430,24 +416,26 @@ def add_post():
 def delete_post(post_id):
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         post = Post.query.get(post_id)
         if not post:
             return jsonify({'error': 'Gönderi bulunamadı'}), 404
-
+        
         if post.user_id != session['user_id']:
             return jsonify({'error': 'Bu gönderiyi silme yetkiniz yok'}), 403
-
+        
+        # İlgili yorumları da sil
         PostComment.query.filter_by(post_id=post_id).delete()
+        
         db.session.delete(post)
-
+        
         user = User.query.get(session['user_id'])
         user.total_posts = max(0, user.total_posts - 1)
-
+        
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -459,21 +447,21 @@ def delete_post(post_id):
 def edit_post(post_id):
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         post = Post.query.get(post_id)
         if not post:
             return jsonify({'error': 'Gönderi bulunamadı'}), 404
-
+        
         if post.user_id != session['user_id']:
             return jsonify({'error': 'Bu gönderiyi düzenleme yetkiniz yok'}), 403
-
+        
         data = request.json
         post.content = data['content']
-
+        
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -505,23 +493,23 @@ def get_feed():
 def rate_post():
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         data = request.json
         post = Post.query.get(data['post_id'])
         rating = int(data['rating'])
-
+        
         if rating < 1 or rating > 5:
             return jsonify({'error': 'Geçersiz oy'}), 400
-
+        
         post.rating_sum += rating
         post.rating_count += 1
-
+        
         db.session.commit()
-
+        
         avg = round(post.rating_sum / post.rating_count, 1)
         return jsonify({'success': True, 'rating_avg': avg, 'rating_count': post.rating_count})
     except Exception as e:
@@ -551,23 +539,23 @@ def get_post_comments(post_id):
 def rate_post_comment():
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         data = request.json
         comment = PostComment.query.get(data['comment_id'])
         rating = int(data['rating'])
-
+        
         if rating < 1 or rating > 5:
             return jsonify({'error': 'Geçersiz oy'}), 400
-
+        
         comment.rating_sum += rating
         comment.rating_count += 1
-
+        
         db.session.commit()
-
+        
         avg = round(comment.rating_sum / comment.rating_count, 1)
         return jsonify({'success': True, 'rating_avg': avg, 'rating_count': comment.rating_count})
     except Exception as e:
@@ -579,10 +567,10 @@ def rate_post_comment():
 def add_post_comment():
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         data = request.json
         comment = PostComment(
@@ -593,13 +581,15 @@ def add_post_comment():
             avatar=session.get('avatar', '👤')
         )
         db.session.add(comment)
-
+        
+        # Post yorum sayısını güncelle
         post = Post.query.get(data['post_id'])
         post.comment_count += 1
-
+        
+        # Kullanıcı istatistiklerini güncelle
         user = User.query.get(session['user_id'])
         user.total_comments += 1
-
+        
         db.session.commit()
         print(f"✅ Post yorumu eklendi: Post #{data['post_id']}")
         return jsonify({'success': True})
@@ -612,27 +602,28 @@ def add_post_comment():
 def delete_post_comment(comment_id):
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         comment = PostComment.query.get(comment_id)
         if not comment:
             return jsonify({'error': 'Yorum bulunamadı'}), 404
-
+        
         if comment.user_id != session['user_id']:
             return jsonify({'error': 'Bu yorumu silme yetkiniz yok'}), 403
-
+        
         post_id = comment.post_id
+        
         db.session.delete(comment)
-
+        
         post = Post.query.get(post_id)
         post.comment_count = max(0, post.comment_count - 1)
-
+        
         user = User.query.get(session['user_id'])
         user.total_comments = max(0, user.total_comments - 1)
-
+        
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -644,23 +635,23 @@ def delete_post_comment(comment_id):
 def delete_asset_comment(comment_id):
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         comment = AssetComment.query.get(comment_id)
         if not comment:
             return jsonify({'error': 'Yorum bulunamadı'}), 404
-
+        
         if comment.user_id != session['user_id']:
             return jsonify({'error': 'Bu yorumu silme yetkiniz yok'}), 403
-
+        
         db.session.delete(comment)
-
+        
         user = User.query.get(session['user_id'])
         user.total_comments = max(0, user.total_comments - 1)
-
+        
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -690,23 +681,23 @@ def get_asset_comments(symbol):
 def rate_asset_comment():
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         data = request.json
         comment = AssetComment.query.get(data['comment_id'])
         rating = int(data['rating'])
-
+        
         if rating < 1 or rating > 5:
             return jsonify({'error': 'Geçersiz oy'}), 400
-
+        
         comment.rating_sum += rating
         comment.rating_count += 1
-
+        
         db.session.commit()
-
+        
         avg = round(comment.rating_sum / comment.rating_count, 1)
         return jsonify({'success': True, 'rating_avg': avg, 'rating_count': comment.rating_count})
     except Exception as e:
@@ -718,10 +709,10 @@ def rate_asset_comment():
 def add_asset_comment():
     if request.method == 'OPTIONS':
         return '', 204
-
+        
     if 'user_id' not in session:
         return jsonify({'error': 'Giriş yapmalısınız'}), 401
-
+    
     try:
         data = request.json
         comment = AssetComment(
@@ -732,10 +723,10 @@ def add_asset_comment():
             avatar=session.get('avatar', '👤')
         )
         db.session.add(comment)
-
+        
         user = User.query.get(session['user_id'])
         user.total_comments += 1
-
+        
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
@@ -745,25 +736,9 @@ def add_asset_comment():
 
 @app.route('/')
 def index():
-    try:
-        return send_from_directory('.', 'index.html')
-    except Exception as e:
-        print(f"❌ Index.html yüklenemedi: {e}")
-        return jsonify({'error': 'Frontend yüklenemedi', 'details': str(e)}), 500
-
-@app.route('/<path:path>')
-def static_files(path):
-    try:
-        return send_from_directory('.', path)
-    except Exception as e:
-        return jsonify({'error': 'Dosya bulunamadı'}), 404
+    return send_from_directory('.', 'index.html')
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
     print("🚀 Flask sunucusu başlatılıyor...")
-    print(f"📂 Working directory: {os.getcwd()}")
-    print(f"📁 Files: {os.listdir('.')}")
-    port = int(os.environ.get('PORT', 5000))
-    print(f"📍 Port: {port}")
-    app.run(debug=False, port=port, host='0.0.0.0')
+    print("📍 http://localhost:5000")
+    app.run(debug=True, port=5000, host='0.0.0.0')
