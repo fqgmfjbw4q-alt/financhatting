@@ -1,624 +1,260 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finans Network Master</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>📊 Finans Network</title>
+
+    <!-- Charts -->
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+
+    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+
     <style>
-        :root { 
-            --bg: #0f1419; 
-            --card: #1c2128; 
-            --primary: #3b82f6; 
-            --primary-hover: #2563eb;
-            --text: #e1e8ed;
-            --text-muted: #8b98a5;
-            --accent: #8b5cf6;
-            --border: #30363d;
-            --success: #10b981;
-            --danger: #ef4444;
+        :root {
+            --bg:#0f1419;
+            --card:#1c2128;
+            --border:#30363d;
+            --primary:#3b82f6;
+            --text:#e5e7eb;
+            --muted:#94a3b8;
+            --danger:#ef4444;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background: var(--bg); 
-            color: var(--text); 
-            font-family: 'Inter', sans-serif; 
-            padding: 20px; 
-            min-height: 100vh;
-        }
-        .nav { 
-            background: var(--card);
-            padding: 15px 40px; 
-            border-radius: 12px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 25px;
-            border: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .nav-links {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .nav-link {
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 600;
-            padding: 8px 16px;
-            border-radius: 8px;
-            background: transparent;
-            border: 1px solid transparent;
-        }
-        .nav-link:hover {
-            color: var(--primary);
-            background: rgba(59, 130, 246, 0.1);
-        }
-        .nav-link.active {
-            color: white;
-            background: var(--primary);
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            transform: translateY(-2px);
-        }
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 10px 20px;
-            border-radius: 8px;
-            transition: all 0.2s;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .btn-secondary:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        .icon-btn {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            transition: all 0.3s;
+
+        * { box-sizing: border-box; margin:0; padding:0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
             font-family: 'Inter', sans-serif;
-        }
-        .icon-btn:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: #ef4444;
-            transform: scale(1.1);
-        }
-        .mini-btn {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            color: var(--primary);
-            padding: 4px 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-        }
-        .mini-btn:hover {
-            background: rgba(59, 130, 246, 0.2);
-            transform: scale(1.05);
-        }
-        .mini-btn.delete-btn {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-        }
-        .mini-btn.delete-btn:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: #ef4444;
-        }
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
-            gap: 20px; 
-            margin-bottom: 30px;
-        }
-        .card { 
-            background: var(--card);
-            border-radius: 12px; 
-            padding: 24px; 
-            border: 1px solid var(--border); 
-            transition: all 0.2s ease;
-        }
-        .card.clickable {
-            cursor: pointer;
-        }
-        .card.clickable:hover { 
-            border-color: var(--primary); 
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
-        }
-        .card-logo {
-            font-size: 42px;
-            margin-bottom: 8px;
-        }
-        .card-name {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        .price { 
-            font-size: 24px; 
-            font-weight: 700; 
-            color: var(--text); 
-            margin-top: 10px;
-        }
-        .economic-card {
-            background: var(--card);
-            border-radius: 12px;
-            padding: 18px;
-            border-left: 3px solid;
-            transition: all 0.2s;
-            border: 1px solid var(--border);
-        }
-        .economic-card:hover {
-            transform: translateX(4px);
-        }
-        .economic-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-        .economic-name {
-            font-size: 13px;
-            color: #94a3b8;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-        .economic-value {
-            font-size: 20px;
-            font-weight: 900;
-            margin-bottom: 8px;
-        }
-        .economic-date {
-            font-size: 12px;
-            color: #64748b;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 4px 8px;
-            border-radius: 6px;
-            display: inline-block;
-        }
-        .economic-description {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-top: 8px;
-            font-style: italic;
-        }
-        .section-title {
-            color: var(--primary);
-            font-size: 24px;
-            font-weight: 900;
-            margin: 30px 0 20px 0;
-            text-align: center;
-            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-        }
-        .container { 
-            max-width: 900px; 
-            margin: 30px auto; 
-        }
-        .post { 
-            background: var(--card);
-            padding: 20px; 
-            border-radius: 12px; 
-            margin-bottom: 12px; 
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-        .post:hover {
-            border-color: var(--primary);
-            transform: translateX(4px);
-        }
-        .post-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        .post-avatar {
-            font-size: 32px;
-        }
-        .post-stats {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-            font-size: 13px;
-            color: #64748b;
-            flex-wrap: wrap;
-        }
-        .comment {
-            background: var(--card);
-            padding: 16px; 
-            border-radius: 12px; 
-            margin-bottom: 12px; 
-            border: 1px solid var(--border);
-            display: flex;
-            gap: 12px;
-        }
-        .comment-avatar {
-            font-size: 28px;
-            flex-shrink: 0;
-        }
-        .modal { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0, 0, 0, 0.85); 
-            z-index: 1000; 
-            align-items: center; 
-            justify-content: center; 
-            overflow-y: auto;
             padding: 20px;
         }
-        .modal-box { 
-            background: var(--card);
-            width: 90%; 
-            max-width: 900px; 
-            padding: 32px; 
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            max-height: 90vh;
-            overflow-y: auto;
+
+        .nav {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            background:var(--card);
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:16px 24px;
+            margin-bottom:24px;
+            flex-wrap:wrap;
+            gap:12px;
         }
-        .period-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
+
+        .nav-links span {
+            margin-right:16px;
+            cursor:pointer;
+            font-weight:600;
+            color:var(--muted);
         }
-        .period-btn:hover {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: var(--primary);
-            color: var(--primary);
+
+        .nav-links span.active {
+            color:white;
+            background:var(--primary);
+            padding:6px 12px;
+            border-radius:8px;
         }
-        .period-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
+
+        .btn {
+            padding:10px 18px;
+            border-radius:8px;
+            border:none;
+            cursor:pointer;
+            font-weight:600;
         }
-        input, textarea { 
-            width: 100%; 
-            padding: 14px; 
-            border-radius: 10px; 
-            border: 1px solid var(--border); 
-            background: rgba(10, 14, 39, 0.8); 
-            color: white; 
-            margin-bottom: 12px;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
+
+        .btn.primary { background:var(--primary); color:white; }
+        .btn.secondary { background:transparent; border:1px solid var(--border); color:var(--muted); }
+
+        .section { display:none; }
+        .section.active { display:block; }
+
+        .grid {
+            display:grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap:16px;
         }
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
+
+        .card {
+            background:var(--card);
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:18px;
+            cursor:pointer;
+            transition:.2s;
         }
-        .section {
-            display: none;
+
+        .card:hover {
+            transform:translateY(-4px);
+            border-color:var(--primary);
         }
-        .section.active {
-            display: block;
+
+        .price {
+            font-size:22px;
+            font-weight:900;
+            margin-top:8px;
         }
-        .profile-header {
-            text-align: center;
-            padding: 30px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-            border-radius: 16px;
-            margin-bottom: 30px;
+
+        .container {
+            max-width:900px;
+            margin:0 auto;
         }
-        .profile-avatar {
-            font-size: 80px;
-            margin-bottom: 15px;
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 15px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            overflow: hidden;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-            border: 3px solid rgba(59, 130, 246, 0.3);
+
+        .post {
+            background:var(--card);
+            border:1px solid var(--border);
+            border-radius:12px;
+            padding:16px;
+            margin-bottom:12px;
+            cursor:pointer;
         }
-        .profile-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+
+        textarea,input {
+            width:100%;
+            background:#0b0f14;
+            color:white;
+            border:1px solid var(--border);
+            border-radius:8px;
+            padding:12px;
+            margin-bottom:10px;
         }
-        .avatar-option {
-            font-size: 32px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-            display: inline-block;
+
+        .modal {
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,.85);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:1000;
         }
-        .avatar-option:hover {
-            transform: scale(1.2);
-            background: rgba(59, 130, 246, 0.1);
+
+        .modal-box {
+            background:var(--card);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:24px;
+            width:90%;
+            max-width:900px;
+            max-height:90vh;
+            overflow:auto;
         }
-        .avatar-option.selected {
-            background: rgba(59, 130, 246, 0.2);
-            border: 2px solid var(--primary);
-            transform: scale(1.15);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
-        }
-        .star-rating {
-            display: inline-flex;
-            gap: 4px;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
-        }
-        .star {
-            font-size: 20px;
-            color: #475569;
-            transition: all 0.2s;
-            cursor: pointer;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-        }
-        .star.filled {
-            color: #fbbf24;
-            text-shadow: 0 0 12px rgba(251, 191, 36, 0.6), 0 1px 2px rgba(0, 0, 0, 0.3);
-        }
-        .star:hover {
-            transform: scale(1.3);
-            filter: brightness(1.2);
-        }
-        .rating-count {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-left: 8px;
-            font-weight: 600;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 2px 8px;
-            border-radius: 6px;
-            cursor: help;
-        }
-        .modal-box.fullscreen {
-            width: 100vw !important;
-            height: 100vh !important;
-            max-width: 100vw !important;
-            max-height: 100vh !important;
-            margin: 0 !important;
-            padding: 20px !important;
-            border-radius: 0 !important;
-        }
-        .modal-box.fullscreen #candlestick-chart-container {
-            height: calc(100vh - 200px) !important;
-        }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-        }
-        .loading::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-        }
-        @media (max-width: 768px) {
-            .nav {
-                padding: 15px 20px;
-            }
-            .nav-links {
-                width: 100%;
-                justify-content: center;
-            }
-            .grid {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-            .modal-box {
-                width: 95%;
-                padding: 20px;
-            }
-        }
+
+        .center { text-align:center; }
+        .muted { color:var(--muted); }
     </style>
 </head>
+
 <body>
 
 <div class="nav">
-    <h2 style="color:var(--primary);">📊 Finans Network Master</h2>
-    
+    <h2 style="color:var(--primary)">📊 Finans Network</h2>
+
     <div class="nav-links" id="nav-links" style="display:none;">
-        <span class="nav-link active" onclick="showSection('market')">🏠 Piyasa</span>
-        <span class="nav-link" onclick="showSection('feed')">🌐 Feed</span>
-        <span class="nav-link" onclick="showSection('profile')">👤 Profilim</span>
+        <span class="active" onclick="showSection('market')">Piyasa</span>
+        <span onclick="showSection('feed')">Feed</span>
+        <span onclick="showSection('profile')">Profil</span>
     </div>
-    
+
     <div id="auth-ui">
-        <button onclick="openAuth('login')" class="btn-primary">Giriş Yap</button>
-        <button onclick="openAuth('reg')" class="btn-secondary" style="margin-left:10px;">Kayıt Ol</button>
+        <button class="btn primary" onclick="openAuth('login')">Giriş</button>
+        <button class="btn secondary" onclick="openAuth('reg')">Kayıt</button>
     </div>
+
     <div id="user-ui" style="display:none;">
-        <span id="user-avatar" style="font-size:24px; margin-right:8px;"></span>
-        <b id="user-name" style="color:var(--primary)"></b>
-        <button onclick="logout()" class="btn-secondary" style="margin-left:15px; padding:8px 16px;">🚪 Çıkış</button>
+        <span id="user-avatar"></span>
+        <b id="user-name"></b>
+        <button class="btn secondary" onclick="logout()">Çıkış</button>
     </div>
 </div>
 
+<!-- MARKET -->
 <div id="market-section" class="section active">
-    <h2 class="section-title">💹 Canlı Piyasa Verileri</h2>
+    <h2 class="center">💹 Piyasa</h2>
     <div class="grid" id="market-list">
-        <div class="loading">Yükleniyor</div>
+        <p class="muted center">Yükleniyor…</p>
     </div>
-    
-    <h2 class="section-title">📅 Ekonomik Takvim & Makro Veriler</h2>
-    <div class="grid" id="economic-calendar" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
-        <div class="loading">Yükleniyor</div>
+
+    <h2 class="center" style="margin-top:32px;">📅 Ekonomik Takvim</h2>
+    <div class="grid" id="economic-calendar">
+        <p class="muted center">Yükleniyor…</p>
     </div>
 </div>
 
+<!-- FEED -->
 <div id="feed-section" class="section">
     <div class="container">
-        <div id="post-box" style="display:none;" class="card">
-            <textarea id="post-input" placeholder="Piyasa yorumunu paylaş..." rows="3"></textarea>
-            <button onclick="submitPost()" class="btn-primary">📤 Paylaş</button>
+        <div id="post-box" style="display:none;">
+            <textarea id="post-input" placeholder="Piyasa yorumu yaz…"></textarea>
+            <button class="btn primary" onclick="submitPost()">Paylaş</button>
         </div>
-        <h3 style="color: var(--primary); margin-bottom: 20px;">🌐 Küresel Feed</h3>
+
+        <h3 style="margin:20px 0;">🌐 Global Feed</h3>
         <div id="global-feed">
-            <div class="loading">Yükleniyor</div>
+            <p class="muted center">Yükleniyor…</p>
         </div>
     </div>
 </div>
 
+<!-- PROFILE -->
 <div id="profile-section" class="section">
-    <div class="container">
-        <div class="profile-header">
-            <div class="profile-avatar" id="profile-avatar">👤</div>
-            <h2 style="color: var(--primary); margin:10px 0;" id="profile-username">@kullanici</h2>
-            <p style="color: #94a3b8; margin:5px 0;" id="profile-fullname">Ad Soyad</p>
-            <p style="color: #cbd5e1; margin:15px 0;" id="profile-bio">Biyografi</p>
-            <div style="display:flex; gap:30px; justify-content:center; margin-top:20px; flex-wrap:wrap;">
-                <div><div style="font-size:28px; font-weight:900; color:var(--primary);" id="profile-posts">0</div><div style="font-size:12px; color:#94a3b8;">Gönderi</div></div>
-                <div><div style="font-size:28px; font-weight:900; color:var(--primary);" id="profile-comments">0</div><div style="font-size:12px; color:#94a3b8;">Yorum</div></div>
-                <div><div style="font-size:28px; font-weight:900; color:var(--primary);" id="profile-joined">2026</div><div style="font-size:12px; color:#94a3b8;">Katılım</div></div>
-            </div>
-            <button onclick="openProfileEdit()" class="btn-primary" style="margin-top:20px;">✏️ Profili Düzenle</button>
+    <div class="container center">
+        <div id="profile-avatar" style="font-size:72px;">👤</div>
+        <h2 id="profile-username">@user</h2>
+        <p id="profile-fullname" class="muted"></p>
+        <p id="profile-bio"></p>
+
+        <div style="margin:20px 0;">
+            <span><b id="profile-posts">0</b> Gönderi</span> ·
+            <span><b id="profile-comments">0</b> Yorum</span>
         </div>
-        <h3 style="color: var(--primary); margin: 30px 0 20px 0;">📝 Gönderilerim</h3>
+
+        <button class="btn primary" onclick="openProfileEdit()">Profili Düzenle</button>
+
+        <h3 style="margin-top:30px;">Gönderilerim</h3>
         <div id="profile-posts-list">
-            <div class="loading">Yükleniyor</div>
+            <p class="muted center">Yükleniyor…</p>
         </div>
     </div>
 </div>
 
+<!-- ASSET MODAL -->
 <div id="asset-modal" class="modal">
-    <div class="modal-box" id="chart-modal-box">
-        <div style="position: relative; margin-bottom: 20px;">
-            <h2 id="modal-title" style="color: var(--primary); margin: 0; text-align: center;"></h2>
-            <div style="position: absolute; top: 0; right: 0; display: flex; gap: 10px;">
-                <button onclick="toggleFullscreen()" class="icon-btn" title="Tam Ekran (F)">⛶</button>
-                <button onclick="closeAssetModal()" class="icon-btn" title="Kapat (ESC)">✕</button>
-            </div>
-        </div>
-        <div style="display:flex; gap:10px; margin:20px 0; justify-content:center; flex-wrap: wrap;">
-            <button class="period-btn active" onclick="changePeriod('daily')">📅 Günlük</button>
-            <button class="period-btn" onclick="changePeriod('weekly')">📊 Haftalık</button>
-            <button class="period-btn" onclick="changePeriod('monthly')">📈 Aylık</button>
-            <button class="period-btn" id="volume-toggle" onclick="toggleVolume()" style="margin-left: 10px;">📊 Hacim: Açık</button>
-        </div>
-        <div id="candlestick-chart-container" style="height: 500px; width: 100%; background: var(--card); border-radius: 12px; border: 1px solid var(--border);"></div>
-        <div style="margin-top:30px; padding-top:20px; border-top:2px solid var(--border);">
-            <h3 style="color: var(--primary); margin-bottom: 15px;">💬 Yorumlar</h3>
-            <div id="comment-box" style="display:none; margin-bottom:20px;">
-                <textarea id="comment-input" placeholder="Bu varlık hakkında ne düşünüyorsun?" rows="2"></textarea>
-                <button onclick="submitComment()" class="btn-primary">💬 Yorum Yap</button>
-            </div>
-            <div id="comments-list">
-                <div class="loading">Yükleniyor</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="post-modal" class="modal">
     <div class="modal-box">
-        <div style="position: relative; margin-bottom: 20px;">
-            <div style="position: absolute; top: 0; right: 0;">
-                <button onclick="closePostModal()" class="icon-btn" title="Kapat (ESC)">✕</button>
-            </div>
+        <h2 id="modal-title" class="center"></h2>
+        <div id="candlestick-chart-container" style="height:420px;"></div>
+
+        <h3 style="margin-top:20px;">💬 Yorumlar</h3>
+        <div id="comment-box" style="display:none;">
+            <textarea id="comment-input" placeholder="Yorum yaz…"></textarea>
+            <button class="btn primary" onclick="submitComment()">Yorum Yap</button>
         </div>
-        <div id="post-detail-content"></div>
-        <div style="margin-top:30px; padding-top:20px; border-top:2px solid var(--border);">
-            <h3 style="color: var(--primary); margin-bottom: 15px;">💬 Yorumlar</h3>
-            <div id="post-comment-box" style="display:none; margin-bottom:20px;">
-                <textarea id="post-comment-input" placeholder="Bu gönderi hakkında ne düşünüyorsun?" rows="2"></textarea>
-                <button onclick="submitPostComment()" class="btn-primary">💬 Yorum Yap</button>
-            </div>
-            <div id="post-comments-list">
-                <div class="loading">Yükleniyor</div>
-            </div>
+        <div id="comments-list"></div>
+
+        <div class="center" style="margin-top:20px;">
+            <button class="btn secondary" onclick="closeAssetModal()">Kapat</button>
         </div>
     </div>
 </div>
 
-<div id="profile-edit-modal" class="modal">
-    <div class="modal-box" style="max-width:500px;">
-        <h3 style="color: var(--primary); text-align: center; margin-bottom:20px;">✏️ Profili Düzenle</h3>
-        <label style="color: #94a3b8; font-size:14px; margin-bottom:8px; display:block;">Avatar Seç:</label>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin:15px 0;">
-            <span class="avatar-option" onclick="selectAvatar('👤')">👤</span>
-            <span class="avatar-option" onclick="selectAvatar('😎')">😎</span>
-            <span class="avatar-option" onclick="selectAvatar('🚀')">🚀</span>
-            <span class="avatar-option" onclick="selectAvatar('💎')">💎</span>
-            <span class="avatar-option" onclick="selectAvatar('🎯')">🎯</span>
-            <span class="avatar-option" onclick="selectAvatar('⚡')">⚡</span>
-            <span class="avatar-option" onclick="selectAvatar('🔥')">🔥</span>
-            <span class="avatar-option" onclick="selectAvatar('🌟')">🌟</span>
-            <span class="avatar-option" onclick="selectAvatar('💰')">💰</span>
-            <span class="avatar-option" onclick="selectAvatar('🦁')">🦁</span>
-        </div>
-        
-        <div style="text-align:center; margin:20px 0;">
-            <label style="color: #94a3b8; font-size:14px; display:block; margin-bottom:10px;">Veya Profil Fotoğrafı Yükle:</label>
-            <input type="file" id="profile-image-input" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
-            <button onclick="document.getElementById('profile-image-input').click()" class="btn-secondary" style="padding:10px 20px;">📷 Fotoğraf Seç</button>
-            <div id="image-preview" style="margin-top:15px; display:none;">
-                <img id="preview-img" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);">
-                <div style="margin-top:8px;">
-                    <button onclick="removeProfileImage()" class="btn-secondary" style="padding:6px 12px; font-size:12px;">🗑️ Fotoğrafı Kaldır</button>
-                </div>
-            </div>
-        </div>
-        <label style="color: #94a3b8; font-size:14px; margin:15px 0 8px 0; display:block;">Biyografi:</label>
-        <textarea id="edit-bio" placeholder="Kendin hakkında birkaç şey yaz..." rows="4"></textarea>
-        <button onclick="saveProfile()" class="btn-primary" style="width:100%; padding:14px; margin-top:10px;">💾 Kaydet</button>
-        <button onclick="closeProfileEdit()" class="btn-secondary" style="width:100%; padding:12px; margin-top:10px;">İptal</button>
-    </div>
-</div>
-
+<!-- AUTH MODAL -->
 <div id="auth-modal" class="modal">
     <div class="modal-box" style="max-width:400px;">
-        <h3 id="auth-title" style="color: var(--primary); text-align: center;"></h3>
-        <div id="reg-fields" style="display:none;">
-            <input id="af-fn" placeholder="Ad Soyad">
-        </div>
+        <h3 id="auth-title" class="center"></h3>
+
+        <input id="af-fn" placeholder="Ad Soyad" style="display:none;">
         <input id="af-un" placeholder="Kullanıcı Adı">
         <input id="af-ps" type="password" placeholder="Şifre">
-        <button id="af-btn" class="btn-primary" style="width:100%; padding:14px; margin-top:10px;"></button>
-        <button onclick="closeAuthModal()" class="btn-secondary" style="width:100%; padding:12px; margin-top:10px;">İptal</button>
+
+        <button id="af-btn" class="btn primary" style="width:100%;margin-top:10px;"></button>
+        <button class="btn secondary" style="width:100%;margin-top:10px;" onclick="closeAuthModal()">İptal</button>
     </div>
 </div>
 
+<!-- JS -->
 <script src="app.js"></script>
-
 </body>
 </html>
