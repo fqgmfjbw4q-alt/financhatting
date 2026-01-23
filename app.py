@@ -1,9 +1,19 @@
 import os
+import threading
+import time
 from datetime import datetime, timezone, timedelta
 from urllib.parse import quote_plus
 
 from flask import (
-    Flask, render_template, jsonify, request, redirect, url_for, session, abort, flash
+    Flask,
+    render_template,
+    jsonify,
+    request,
+    redirect,
+    url_for,
+    session,
+    abort,
+    flash,
 )
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,18 +23,13 @@ import yfinance as yf
 # OAuth (opsiyonel)
 from authlib.integrations.flask_client import OAuth
 
+
 # ----------------------------
 # App + Config
 # ----------------------------
 app = Flask(__name__, template_folder="templates")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-import threading
-import time
 
-CACHE_TTL_SECONDS = 25  # frontend 30sn'de bir çağırıyor, 25 iyi
-_last_good = {"data": None, "ts": 0.0}
-_lock = threading.Lock()
-_refreshing = False
 # DATABASE_URL (Railway)
 db_url = os.environ.get("DATABASE_URL")
 if db_url and db_url.startswith("postgres://"):
@@ -77,9 +82,7 @@ class Follow(db.Model):
     follower_id = db.Column(db.BigInteger, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     following_id = db.Column(db.BigInteger, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (
-        db.UniqueConstraint("follower_id", "following_id", name="uq_follow_pair"),
-    )
+    __table_args__ = (db.UniqueConstraint("follower_id", "following_id", name="uq_follow_pair"),)
 
 
 class Post(db.Model):
@@ -87,7 +90,7 @@ class Post(db.Model):
     id = db.Column(db.BigInteger, primary_key=True)
     user_id = db.Column(db.BigInteger, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False)
-    symbol_key = db.Column(db.String(16), nullable=True, index=True)  # opsiyonel (BTC, GOLD vs.)
+    symbol_key = db.Column(db.String(16), nullable=True, index=True)  # opsiyonel (btc, gold vs.)
     image_url = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
@@ -99,9 +102,7 @@ class PostRating(db.Model):
     user_id = db.Column(db.BigInteger, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     stars = db.Column(db.SmallInteger, nullable=False)  # 1..5
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (
-        db.UniqueConstraint("post_id", "user_id", name="uq_post_rating_once"),
-    )
+    __table_args__ = (db.UniqueConstraint("post_id", "user_id", name="uq_post_rating_once"),)
 
 
 class SymbolComment(db.Model):
@@ -120,9 +121,7 @@ class CommentRating(db.Model):
     user_id = db.Column(db.BigInteger, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     stars = db.Column(db.SmallInteger, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (
-        db.UniqueConstraint("comment_id", "user_id", name="uq_comment_rating_once"),
-    )
+    __table_args__ = (db.UniqueConstraint("comment_id", "user_id", name="uq_comment_rating_once"),)
 
 
 class PriceAlert(db.Model):
@@ -133,10 +132,6 @@ class PriceAlert(db.Model):
     window = db.Column(db.String(8), nullable=False, default="1d")
     last_price = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
-    __table_args__ = (
-        # aynı sembol için aynı gün aynı pencere tekrar basmasın
-        db.UniqueConstraint("symbol_key", "window", "created_at", name="uq_alert_uniq_soft"),
-    )
 
 
 class FeedEvent(db.Model):
@@ -154,21 +149,24 @@ class FeedEvent(db.Model):
 def now_utc():
     return datetime.now(timezone.utc)
 
+
 def current_user():
     uid = session.get("user_id")
     if not uid:
         return None
     return db.session.get(User, uid)
 
+
 def login_required():
     if not current_user():
         return redirect(url_for("login", next=request.path))
     return None
 
+
 def ui_avatar_url(full_name: str) -> str:
-    name = quote_plus(full_name.strip() or "User")
-    # tema mevcut tasarıma uygun
+    name = quote_plus((full_name or "").strip() or "User")
     return f"https://ui-avatars.com/api/?name={name}&background=0f172a&color=10b981&size=256&bold=true"
+
 
 def username_is_valid(u: str) -> bool:
     if not u or len(u) < 3 or len(u) > 32:
@@ -176,8 +174,9 @@ def username_is_valid(u: str) -> bool:
     allowed = set("abcdefghijklmnopqrstuvwxyz0123456789_.")
     return all(ch in allowed for ch in u)
 
+
 # ----------------------------
-# Finance Data (ORİJİNAL KALDI)
+# Finance Data + Cache
 # ----------------------------
 PRICE_SYMBOLS = {
     "btc": "BTC-USD",
@@ -189,62 +188,36 @@ PRICE_SYMBOLS = {
     "bist100": "^XU100",
 }
 
-# Basit cache: 20 sn
-_price_cache = {"ts": None, "data": None}
+CACHE_TTL_SECONDS = 25  # frontend 30sn'de bir çağırıyor
+_last_good = {"data": None, "ts": 0.0}
+_lock = threading.Lock()
+_refreshing = False
 
-def _last_close_non_empty(ticker: yf.Ticker, periods=("1d", "5d")):
-    for p in periods:
-        data = ticker.history(period=p)
-        if data is not None and not data.empty:
-            return float(data["Close"].iloc[-1])
-    return None
 
 def _fetch_prices_once():
-    symbols = {
-        'btc': 'BTC-USD',
-        'gold': 'GC=F',
-        'silver': 'SI=F',
-        'copper': 'HG=F',
-        'usd_try': 'USDTRY=X',
-        'eur_try': 'EURTRY=X',
-        'bist100': '^XU100'
-    }
-
     prices = {}
 
-    for key, symbol in symbols.items():
+    for key, symbol in PRICE_SYMBOLS.items():
         try:
             t = yf.Ticker(symbol)
-
-            # 5d fallback + son dolu close
+            # 5d + günlük close -> son dolu close
             data = t.history(period="5d", interval="1d")
-
             if data is not None and not data.empty:
                 close = data["Close"].dropna()
                 prices[key] = float(close.iloc[-1]) if not close.empty else None
             else:
                 prices[key] = None
-
         except Exception as e:
             print(f"Ticker hata {symbol}: {e}")
             prices[key] = None
 
-    # Gram Altın TL
-    if prices.get('gold') and prices.get('usd_try'):
-        prices['gram_altin'] = (prices['gold'] / 31.1035) * prices['usd_try']
+    # Gram Altın TL (Ons / 31.1035 * USDTRY)
+    if prices.get("gold") and prices.get("usd_try"):
+        prices["gram_altin"] = (prices["gold"] / 31.1035) * prices["usd_try"]
     else:
-        prices['gram_altin'] = None
+        prices["gram_altin"] = None
 
-    prices['timestamp'] = datetime.now().isoformat()
-    return prices
-
-    # Gram Altın TL
-    if prices.get('gold') and prices.get('usd_try'):
-        prices['gram_altin'] = (prices['gold'] / 31.1035) * prices['usd_try']
-    else:
-        prices['gram_altin'] = None
-
-    prices['timestamp'] = datetime.now().isoformat()
+    prices["timestamp"] = datetime.now().isoformat()
     return prices
 
 
@@ -252,7 +225,6 @@ def _refresh_cache_background():
     global _refreshing
     try:
         data = _fetch_prices_once()
-        # En azından 1-2 kritik veri geldiyse cache'e yaz (tamamen boşsa eskiyi koru)
         got_any = any(data.get(k) is not None for k in ["btc", "gold", "usd_try", "eur_try"])
         if got_any:
             with _lock:
@@ -263,12 +235,6 @@ def _refresh_cache_background():
 
 
 def get_financial_data():
-    """
-    Hızlı döner:
-    - cache tazeyse cache
-    - değilse cache'i döner, arkada refresh başlatır
-    - cache hiç yoksa ilk sefer senkron fetch (çok kısa da olsa) dener
-    """
     global _refreshing
 
     now = time.time()
@@ -279,14 +245,14 @@ def get_financial_data():
     if cached and age < CACHE_TTL_SECONDS:
         return cached
 
-    # Cache var ama bayat -> kullanıcı beklemesin, arkada yenile
+    # cache var ama bayat -> hemen cache dön, arkada yenile
     if cached:
         if not _refreshing:
             _refreshing = True
             threading.Thread(target=_refresh_cache_background, daemon=True).start()
         return cached
 
-    # Cache yoksa: ilk kez geldi -> bir kere senkron dene
+    # cache yok -> 1 kere senkron dene
     data = _fetch_prices_once()
     got_any = any(data.get(k) is not None for k in ["btc", "gold", "usd_try", "eur_try"])
     if got_any:
@@ -294,10 +260,36 @@ def get_financial_data():
             _last_good["data"] = data
             _last_good["ts"] = time.time()
     return data
-    
+
+
+def compute_change_pct(yahoo_symbol: str):
+    """
+    1 günlük yüzde değişimi hesaplar (close[-1] vs close[-2]).
+    Yahoo/yfinance boş dönerse None döner, feed patlamaz.
+    """
+    try:
+        t = yf.Ticker(yahoo_symbol)
+        df = t.history(period="5d", interval="1d")
+        if df is None or df.empty:
+            return None
+
+        close = df["Close"].dropna()
+        if len(close) < 2:
+            return None
+
+        last = float(close.iloc[-1])
+        prev = float(close.iloc[-2])
+        if prev == 0:
+            return None
+
+        return ((last - prev) / prev) * 100.0
+    except Exception as e:
+        print("compute_change_pct hata:", yahoo_symbol, e)
+        return None
+
+
 def maybe_create_price_alerts():
-    """%20+ değişim varsa feed'e alert düşür (günde 1 defa / sembol)."""
-    # son 24 saat içinde aynı sembol alert var mı?
+    """%20+ değişim varsa feed'e alert düşür (son 24 saatte 1 defa / sembol)."""
     since = now_utc() - timedelta(hours=24)
 
     for k, sym in PRICE_SYMBOLS.items():
@@ -315,31 +307,97 @@ def maybe_create_price_alerts():
         if exists:
             continue
 
-        # son fiyat
         last_price = None
         try:
             t = yf.Ticker(sym)
-            d = t.history(period="1d")
+            d = t.history(period="5d", interval="1d")
             if d is not None and not d.empty:
-                last_price = float(d["Close"].iloc[-1])
+                close = d["Close"].dropna()
+                last_price = float(close.iloc[-1]) if not close.empty else None
         except Exception:
             pass
 
         alert = PriceAlert(symbol_key=k, change_pct=float(pct), window="1d", last_price=last_price)
         db.session.add(alert)
-        db.session.flush()  # id için
+        db.session.flush()  # id üret
 
-        score = abs(float(pct)) + 10.0  # basit skor
+        score = abs(float(pct)) + 10.0
         fe = FeedEvent(type="alert", ref_id=alert.id, score=score)
         db.session.add(fe)
 
     db.session.commit()
 
+
 # ----------------------------
-# DB init (stabil ve basit)
+# DB init
 # ----------------------------
 with app.app_context():
     db.create_all()
+
+
+# ----------------------------
+# Rating summaries
+# ----------------------------
+def post_rating_summary(post_id: int):
+    q = db.session.query(
+        db.func.avg(PostRating.stars),
+        db.func.count(PostRating.id),
+    ).filter(PostRating.post_id == post_id)
+    avg, cnt = q.first()
+    avg = float(avg) if avg is not None else 0.0
+    cnt = int(cnt or 0)
+    return avg, cnt
+
+
+def comment_rating_summary(comment_id: int):
+    q = db.session.query(
+        db.func.avg(CommentRating.stars),
+        db.func.count(CommentRating.id),
+    ).filter(CommentRating.comment_id == comment_id)
+    avg, cnt = q.first()
+    avg = float(avg) if avg is not None else 0.0
+    cnt = int(cnt or 0)
+    return avg, cnt
+
+
+def top_posts_by_rating(limit=10):
+    rows = (
+        db.session.query(
+            Post,
+            db.func.avg(PostRating.stars).label("avg"),
+            db.func.count(PostRating.id).label("cnt"),
+        )
+        .outerjoin(PostRating, PostRating.post_id == Post.id)
+        .group_by(Post.id)
+        .all()
+    )
+
+    enriched = []
+    for p, avg, cnt in rows:
+        score = float(avg or 0.0) * (1.0 + (int(cnt or 0) / 5.0))
+        enriched.append((score, p, float(avg or 0.0), int(cnt or 0)))
+
+    enriched.sort(key=lambda x: x[0], reverse=True)
+    out = []
+    for score, p, avg, cnt in enriched[:limit]:
+        u = db.session.get(User, p.user_id)
+        out.append({"post": p, "user": u, "avg": avg, "cnt": cnt})
+    return out
+
+
+def trending_symbols_by_comments(limit=10):
+    rows = (
+        db.session.query(
+            SymbolComment.symbol_key,
+            db.func.count(SymbolComment.id).label("cnt"),
+        )
+        .group_by(SymbolComment.symbol_key)
+        .order_by(db.func.count(SymbolComment.id).desc())
+        .limit(limit)
+        .all()
+    )
+    return [{"symbol_key": r[0], "cnt": int(r[1])} for r in rows]
+
 
 # ----------------------------
 # Routes: Pages
@@ -348,15 +406,14 @@ with app.app_context():
 def index():
     return render_template("index.html", user=current_user())
 
+
 @app.route("/feed")
 def feed():
-    # feed'e alert üretimini burada tetiklemek stabil (cron yok)
     try:
         maybe_create_price_alerts()
     except Exception as e:
         print("alert üretim hatası:", e)
 
-    # Hot sıralama: score DESC, created_at DESC
     events = (
         db.session.query(FeedEvent)
         .order_by(FeedEvent.score.desc(), FeedEvent.created_at.desc())
@@ -381,9 +438,9 @@ def feed():
 
     return render_template("feed.html", user=current_user(), items=items)
 
+
 @app.route("/explore")
 def explore():
-    # Basit keşfet: en çok oylanan postlar + en çok yorum alan semboller (basit)
     top_posts = top_posts_by_rating(limit=10)
     trending_symbols = trending_symbols_by_comments(limit=10)
     return render_template(
@@ -392,6 +449,7 @@ def explore():
         top_posts=top_posts,
         trending_symbols=trending_symbols,
     )
+
 
 @app.route("/settings/profile", methods=["GET", "POST"])
 def settings():
@@ -424,7 +482,7 @@ def settings():
 
     return render_template("settings.html", user=u)
 
-# Twitter tarzı profil: /@username
+
 @app.route("/@<username>")
 def profile(username):
     username = username.lower()
@@ -432,7 +490,6 @@ def profile(username):
     if not u:
         abort(404)
 
-    # kullanıcının postları
     posts = (
         db.session.query(Post)
         .filter(Post.user_id == u.id)
@@ -441,7 +498,6 @@ def profile(username):
         .all()
     )
 
-    # follow stats
     followers = db.session.query(Follow).filter(Follow.following_id == u.id).count()
     following = db.session.query(Follow).filter(Follow.follower_id == u.id).count()
 
@@ -455,7 +511,6 @@ def profile(username):
             is not None
         )
 
-    # post rating özetleri
     post_meta = {}
     for p in posts:
         avg, cnt = post_rating_summary(p.id)
@@ -472,13 +527,13 @@ def profile(username):
         post_meta=post_meta,
     )
 
+
 @app.route("/s/<symbol_key>")
 def symbol_page(symbol_key):
     symbol_key = symbol_key.lower()
     if symbol_key not in PRICE_SYMBOLS:
         abort(404)
 
-    # yorumlar
     comments = (
         db.session.query(SymbolComment)
         .filter(SymbolComment.symbol_key == symbol_key)
@@ -499,6 +554,7 @@ def symbol_page(symbol_key):
         symbol_key=symbol_key,
         comments=comment_rows,
     )
+
 
 # ----------------------------
 # Routes: Auth
@@ -540,6 +596,7 @@ def register():
 
     return render_template("register.html", user=current_user())
 
+
 @app.route("/auth/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -558,10 +615,12 @@ def login():
 
     return render_template("login.html", user=current_user())
 
+
 @app.route("/auth/logout")
 def logout():
     session.clear()
     return redirect(url_for("index"))
+
 
 @app.route("/auth/google")
 def google_login():
@@ -571,6 +630,7 @@ def google_login():
     redirect_uri = url_for("google_callback", _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
+
 @app.route("/auth/google/callback")
 def google_callback():
     if not (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET):
@@ -579,7 +639,6 @@ def google_callback():
     token = oauth.google.authorize_access_token()
     userinfo = token.get("userinfo")
     if not userinfo:
-        # bazı akışlarda userinfo ayrı endpointten gelir
         userinfo = oauth.google.parse_id_token(token)
 
     google_id = userinfo.get("sub")
@@ -587,7 +646,6 @@ def google_callback():
 
     u = db.session.query(User).filter_by(google_id=google_id).first()
     if not u:
-        # username otomatik öner (sonra kullanıcı isterse değiştiririz)
         base = "".join(ch for ch in (userinfo.get("given_name") or "user").lower() if ch.isalnum())
         base = (base or "user")[:20]
         candidate = base
@@ -608,6 +666,7 @@ def google_callback():
     session["user_id"] = u.id
     return redirect(url_for("index"))
 
+
 # ----------------------------
 # Routes: Social actions
 # ----------------------------
@@ -615,12 +674,12 @@ def google_callback():
 def create_post():
     lr = login_required()
     if lr:
-        return lr  # redirect
+        return lr
     u = current_user()
     content = (request.form.get("content") or "").strip()
     symbol_key = (request.form.get("symbol_key") or "").strip().lower() or None
 
-    if not content or len(content) < 1:
+    if not content:
         flash("Boş post atılamaz.", "err")
         return redirect(request.referrer or url_for("feed"))
     if len(content) > 1000:
@@ -634,12 +693,12 @@ def create_post():
     db.session.add(p)
     db.session.flush()
 
-    # feed event
     fe = FeedEvent(type="post", ref_id=p.id, score=1.0)
     db.session.add(fe)
     db.session.commit()
 
     return redirect(request.referrer or url_for("feed"))
+
 
 @app.route("/api/post/<int:post_id>/rate", methods=["POST"])
 def rate_post(post_id):
@@ -666,14 +725,14 @@ def rate_post(post_id):
         r = PostRating(post_id=post_id, user_id=u.id, stars=stars)
         db.session.add(r)
 
-    # feed hot skorunu güncelle (basit)
-    avg, cnt = post_rating_summary(post_id, refresh=True)
+    avg, cnt = post_rating_summary(post_id)
     fe = db.session.query(FeedEvent).filter(FeedEvent.type == "post", FeedEvent.ref_id == post_id).first()
     if fe:
         fe.score = float(avg) * (1.0 + (cnt / 10.0))
 
     db.session.commit()
     return redirect(request.referrer or url_for("feed"))
+
 
 @app.route("/api/symbol/<symbol_key>/comment", methods=["POST"])
 def add_symbol_comment(symbol_key):
@@ -694,6 +753,7 @@ def add_symbol_comment(symbol_key):
     db.session.add(c)
     db.session.commit()
     return redirect(url_for("symbol_page", symbol_key=symbol_key))
+
 
 @app.route("/api/comment/<int:comment_id>/rate", methods=["POST"])
 def rate_comment(comment_id):
@@ -723,6 +783,7 @@ def rate_comment(comment_id):
     db.session.commit()
     return redirect(request.referrer or url_for("symbol_page", symbol_key=c.symbol_key))
 
+
 @app.route("/api/follow/<username>", methods=["POST"])
 def follow_user(username):
     lr = login_required()
@@ -740,13 +801,13 @@ def follow_user(username):
         .first()
     )
     if existing:
-        # unfollow
-        db.session.delete(existing)
+        db.session.delete(existing)  # unfollow
     else:
         db.session.add(Follow(follower_id=me.id, following_id=target.id))
 
     db.session.commit()
     return redirect(url_for("profile", username=target.username))
+
 
 # ----------------------------
 # Routes: Existing APIs (prices/calendar)
@@ -755,73 +816,25 @@ def follow_user(username):
 def prices_api():
     return jsonify(get_financial_data())
 
+
 @app.route("/api/calendar")
 def calendar_api():
-    # şimdilik hardcoded
     data = {
         "fed_rate": {"current": 4.50, "next_meeting": "2026-01-28"},
         "nonfarm_payroll": {"label": "Tarım Dışı İstihdam", "value": "215K", "previous": "190K", "date": "2026-02-06"},
         "unemployment": {"label": "İşsizlik Oranı", "value": "3.9%", "previous": "4.0%", "date": "2026-02-06"},
-        "inflation": {"label": "TR Enflasyon (TÜFE)", "value": "44.2%", "previous": "45.1%", "date": "2026-02-03"}
+        "inflation": {"label": "TR Enflasyon (TÜFE)", "value": "44.2%", "previous": "45.1%", "date": "2026-02-03"},
     }
     return jsonify(data)
 
-# ----------------------------
-# Rating summaries
-# ----------------------------
-def post_rating_summary(post_id: int, refresh: bool = False):
-    q = db.session.query(
-        db.func.avg(PostRating.stars),
-        db.func.count(PostRating.id)
-    ).filter(PostRating.post_id == post_id)
-    avg, cnt = q.first()
-    avg = float(avg) if avg is not None else 0.0
-    cnt = int(cnt or 0)
-    return avg, cnt
-
-def comment_rating_summary(comment_id: int):
-    q = db.session.query(
-        db.func.avg(CommentRating.stars),
-        db.func.count(CommentRating.id)
-    ).filter(CommentRating.comment_id == comment_id)
-    avg, cnt = q.first()
-    avg = float(avg) if avg is not None else 0.0
-    cnt = int(cnt or 0)
-    return avg, cnt
-
-def top_posts_by_rating(limit=10):
-    # avg*count gibi basit bir “etkileşim” sıralaması
-    rows = db.session.query(
-        Post,
-        db.func.avg(PostRating.stars).label("avg"),
-        db.func.count(PostRating.id).label("cnt"),
-    ).outerjoin(PostRating, PostRating.post_id == Post.id).group_by(Post.id).all()
-
-    enriched = []
-    for p, avg, cnt in rows:
-        score = (float(avg or 0.0) * (1.0 + (int(cnt or 0) / 5.0)))
-        enriched.append((score, p, float(avg or 0.0), int(cnt or 0)))
-
-    enriched.sort(key=lambda x: x[0], reverse=True)
-    out = []
-    for score, p, avg, cnt in enriched[:limit]:
-        u = db.session.get(User, p.user_id)
-        out.append({"post": p, "user": u, "avg": avg, "cnt": cnt})
-    return out
-
-def trending_symbols_by_comments(limit=10):
-    rows = db.session.query(
-        SymbolComment.symbol_key,
-        db.func.count(SymbolComment.id).label("cnt"),
-    ).group_by(SymbolComment.symbol_key).order_by(db.func.count(SymbolComment.id).desc()).limit(limit).all()
-    return [{"symbol_key": r[0], "cnt": int(r[1])} for r in rows]
 
 # ----------------------------
 # Error pages
 # ----------------------------
 @app.errorhandler(404)
 def not_found(e):
-    return render_template("base.html", user=current_user(), content="<div class='error-message'>404 - Bulunamadı</div>"), 404
+    return "<h1>404</h1><p>Bulunamadı</p>", 404
+
 
 # ----------------------------
 # Run local
