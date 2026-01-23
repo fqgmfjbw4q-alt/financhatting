@@ -118,7 +118,6 @@
             color: #64748b;
         }
 
-        /* GRAFİK MODAL STİLİ */
         #chartModal {
             display: none;
             position: fixed;
@@ -369,7 +368,7 @@
             copper: { label: 'Bakır (Ons)', icon: '🔶', unit: 'USD', decimals: 4, tv: "CAPITALCOM:COPPER" },
             usd_try: { label: 'Dolar / TL', icon: '💵', unit: 'TRY', decimals: 4, tv: "FX:USDTRY" },
             eur_try: { label: 'Euro / TL', icon: '💶', unit: 'TRY', decimals: 4, tv: "FX:EURTRY" },
-            bist100: { label: 'BIST 100', icon: '📈', unit: '', decimals: 2, tv: "TVC:XU100" }
+            bist100: { label: 'BIST 100', icon: '📈', unit: '', decimals: 2, tv: "INDEX:XU100" }
         };
 
         async function loadPrices() {
@@ -430,7 +429,8 @@
                 "allow_symbol_change": true,
                 "container_id": "tv_chart_container",
                 "studies": [
-                    "PivotPointsHighLow@tv-basicstudies"
+                    "Volume@tv-basicstudies",
+                    "PivotPointsStandard@tv-basicstudies"
                 ]
             });
         }
