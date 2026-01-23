@@ -4,14 +4,22 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# NOT: PostgreSQL bağlantı bilgilerini Railway üzerinden alınca buraya ekleyeceğiz.
-# Şu an sistemin çökmemesi için iskelet yapıyı koruyorum.
+# Sunucu çalıştığı sürece postları hafızada tutan gerçek liste
+# PostgreSQL bağladığımızda bunlar kalıcı olacak
+all_posts = [
+    {
+        "username": "mehmet",
+        "content": "Financhatting Sosyal terminali resmen açıldı! Buraya analizlerinizi yazabilirsiniz.",
+        "stars": 4.5,
+        "votes": 12,
+        "time": "1 sa. önce"
+    }
+]
 
 def get_financial_data():
     symbols = {
         'btc': 'BTC-USD', 'gold': 'GC=F', 'silver': 'SI=F',
-        'copper': 'HG=F', 'usd_try': 'USDTRY=X', 'eur_try': 'EURTRY=X',
-        'bist100': '^XU100'
+        'usd_try': 'USDTRY=X', 'eur_try': 'EURTRY=X', 'bist100': '^XU100'
     }
     prices = {}
     try:
@@ -20,37 +28,46 @@ def get_financial_data():
             data = ticker.history(period='1d')
             if not data.empty:
                 prices[key] = data['Close'].iloc[-1]
-            else:
-                prices[key] = None
         
-        # Gram Altın Hesabı (Önceki koddan korundu)
         if prices.get('gold') and prices.get('usd_try'):
             prices['gram_altin'] = (prices['gold'] / 31.1035) * prices['usd_try']
     except Exception as e:
-        print(f"Veri çekme hatası: {e}")
-    
+        print(f"Hata: {e}")
     prices['timestamp'] = datetime.now().isoformat()
     return prices
 
-# --- SOSYAL AĞ ROTALARI ---
-
 @app.route('/')
 def index():
-    # Sayfa parametresi ile index.html içindeki bölümleri kontrol ediyoruz
     return render_template('index.html', page="markets")
 
 @app.route('/feed')
 def feed():
-    return render_template('index.html', page="feed")
+    return render_template('index.html', page="feed", posts=all_posts)
 
 @app.route('/kesfet')
 def kesfet():
-    return render_template('index.html', page="explore")
+    # En çok oylananları üste çekmek için basit sıralama
+    trending = sorted(all_posts, key=lambda x: x['votes'], reverse=True)
+    return render_template('index.html', page="explore", posts=trending)
 
 @app.route('/@<username>')
 def profile(username):
-    # Twitter mantığı @username yapısı aktif edildi
-    return render_template('index.html', page="profile", username=username)
+    user_posts = [p for p in all_posts if p['username'] == username]
+    return render_template('index.html', page="profile", username=username, posts=user_posts)
+
+@app.route('/post', methods=['POST'])
+def create_post():
+    content = request.form.get('content')
+    if content and len(content.strip()) > 0:
+        new_post = {
+            "username": "mehmet", # Giriş sistemi gelene kadar senin adınla paylaşır
+            "content": content,
+            "stars": 0,
+            "votes": 0,
+            "time": "Şimdi"
+        }
+        all_posts.insert(0, new_post) # Yeni postu en başa ekle
+    return redirect(url_for('feed'))
 
 @app.route('/api/prices')
 def prices():
@@ -58,12 +75,9 @@ def prices():
 
 @app.route('/api/calendar')
 def calendar():
-    # Ekonomik takvim verileri (Önceki koddan korundu)
     data = {
-        "fed_rate": {"current": 4.50, "next_meeting": "2026-01-28"},
-        "nonfarm_payroll": {"label": "Tarım Dışı İstihdam", "value": "215K", "previous": "190K", "date": "2026-02-06"},
-        "unemployment": {"label": "İşsizlik Oranı", "value": "3.9%", "previous": "4.0%", "date": "2026-02-06"},
-        "inflation": {"label": "TR Enflasyon (TÜFE)", "value": "44.2%", "previous": "45.1%", "date": "2026-02-03"}
+        "fed_rate": {"current": 4.50},
+        "inflation": {"value": "44.2%"}
     }
     return jsonify(data)
 
