@@ -3,363 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finans Takip - Canlı Piyasa Verileri</title>
+    <title>Financhatting - Sosyal Finans Terminali</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* --- TEMEL CSS VE RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: #0f172a;
             color: #e2e8f0;
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            padding: 30px 0;
-            margin-bottom: 40px;
-            border-bottom: 2px solid #334155;
-        }
-
-        header h1 {
-            font-size: 2.5em;
+        /* --- TICKER: ÜST KAYAN ŞERİT --- */
+        .price-ticker {
+            width: 100%;
+            background: #1e293b;
             color: #10b981;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            padding: 12px 0;
+            position: fixed;
+            top: 0;
+            z-index: 10002;
+            overflow: hidden;
+            white-space: nowrap;
+            border-bottom: 1px solid #334155;
+            font-size: 0.95em;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .ticker-content {
+            display: inline-block;
+            animation: ticker 60s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
         }
 
-        header p {
-            color: #94a3b8;
-            font-size: 1.1em;
+        /* --- SIDEBAR: SOL MENÜ --- */
+        .sidebar {
+            width: 280px;
+            height: 100vh;
+            background: #0f172a;
+            position: fixed;
+            left: 0;
+            top: 45px;
+            padding: 40px 25px;
+            border-right: 1px solid #334155;
+            z-index: 1000;
+            transition: all 0.3s ease;
         }
-
-        .last-update {
+        .sidebar h2 {
+            color: #10b981;
+            font-size: 1.6em;
+            margin-bottom: 45px;
             text-align: center;
-            color: #64748b;
-            margin-bottom: 20px;
-            font-size: 0.9em;
+            letter-spacing: 2px;
+            font-weight: 800;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 16px 22px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 18px;
+            margin-bottom: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+        }
+        .nav-link:hover {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+            transform: translateX(8px);
+        }
+        .nav-link.active {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.25) 0%, transparent 100%);
+            color: #10b981;
+            border-left: 5px solid #10b981;
         }
 
+        /* --- ANA İÇERİK --- */
+        .main-content {
+            margin-left: 280px;
+            margin-top: 65px;
+            padding: 45px;
+            width: calc(100% - 280px);
+            max-width: 1400px;
+        }
+
+        /* --- MARKET KARTLARI --- */
         .prices-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 50px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-bottom: 70px;
         }
-
         .price-card {
             background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
             border: 1px solid #334155;
-            border-radius: 15px;
-            padding: 25px;
-            transition: all 0.3s ease;
+            border-radius: 24px;
+            padding: 35px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
             position: relative;
             overflow: hidden;
         }
-
-        .price-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #10b981, #3b82f6);
-            opacity: 0;
-            transition: opacity 0.3s ease;
+        .price-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
+            background: #10b981; transform: scaleX(0); transition: 0.4s;
         }
-
         .price-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+            transform: translateY(-12px);
             border-color: #10b981;
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2);
         }
+        .price-card:hover::after { transform: scaleX(1); }
+        .price-label { font-size: 0.9em; color: #94a3b8; text-transform: uppercase; margin-bottom: 18px; letter-spacing: 1.5px; }
+        .price-value { font-size: 2.4em; color: #10b981; font-weight: 800; margin-bottom: 12px; letter-spacing: -1px; }
 
-        .price-card:hover::before {
-            opacity: 1;
+        /* --- SOSYAL FEED VE YILDIZLAR --- */
+        .post-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 35px;
+            max-width: 850px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transition: 0.3s;
         }
-
-        .price-label {
-            font-size: 0.9em;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
+        .post-card:hover { border-color: #3b82f6; }
+        .rating-box {
+            margin: 25px 0;
+            padding: 20px 0;
+            border-top: 1px solid #334155;
+            border-bottom: 1px solid #334155;
+        }
+        .stars {
+            color: #fbbf24;
+            font-size: 1.7em;
             display: flex;
-            align-items: center;
             gap: 8px;
+            align-items: center;
         }
+        .star-icon { cursor: pointer; transition: 0.2s; }
+        .star-icon:hover { transform: scale(1.3) rotate(15deg); color: #f59e0b; }
+        .vote-count { font-size: 0.85em; color: #64748b; margin-left: 15px; font-weight: 500; }
 
-        .price-icon {
-            font-size: 1.3em;
-        }
-
-        .price-value {
-            font-size: 2em;
-            color: #10b981;
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .price-unit {
-            font-size: 0.85em;
-            color: #64748b;
-        }
-
-        /* GRAFİK MODAL STİLİ */
+        /* --- MODAL VE GRAFİK --- */
         #chartModal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 10000;
-            backdrop-filter: blur(5px);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 20000;
+            backdrop-filter: blur(10px);
         }
-
         .modal-content {
-            background: #1e293b;
-            width: 95%;
-            height: 90%;
-            margin: 2% auto;
-            border-radius: 15px;
-            position: relative;
-            border: 1px solid #334155;
-            overflow: hidden;
+            width: 96%; height: 94%; margin: 1.5% auto; position: relative;
         }
-
         .close-btn {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: #ef4444;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            z-index: 10001;
-            font-weight: bold;
+            position: absolute; top: 15px; right: 25px;
+            background: #ef4444; color: white; border: none;
+            padding: 14px 30px; border-radius: 12px; cursor: pointer;
+            font-weight: 800; transition: 0.3s; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
         }
+        .close-btn:hover { background: #dc2626; transform: translateY(-3px); }
 
-        .loading {
-            text-align: center;
-            padding: 50px;
-            color: #64748b;
-        }
-
-        .spinner {
-            border: 3px solid #334155;
-            border-top: 3px solid #10b981;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .calendar-section {
-            margin-top: 50px;
-        }
-
-        .section-title {
-            font-size: 2em;
-            color: #10b981;
-            margin-bottom: 30px;
-            text-align: center;
-            position: relative;
-            padding-bottom: 15px;
-        }
-
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 3px;
-            background: linear-gradient(90deg, #10b981, #3b82f6);
-        }
-
+        /* --- EKONOMİK TAKVİM --- */
         .calendar-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 30px;
         }
-
         .calendar-card {
-            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            background: linear-gradient(145deg, #1e293b, #111827);
+            padding: 35px;
+            border-radius: 24px;
             border: 1px solid #334155;
-            border-radius: 15px;
-            padding: 30px;
-            transition: all 0.3s ease;
+            transition: 0.4s;
         }
+        .calendar-card:hover { border-color: #3b82f6; transform: scale(1.02); }
 
-        .calendar-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
-            border-color: #3b82f6;
-        }
-
-        .calendar-label {
-            font-size: 1.1em;
-            color: #94a3b8;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .calendar-value {
-            font-size: 2.2em;
-            color: #3b82f6;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .calendar-meta {
-            color: #64748b;
-            font-size: 0.9em;
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #334155;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-        }
-
-        .badge-green {
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-        }
-
-        .badge-red {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-        }
-
-        .badge-blue {
-            background: rgba(59, 130, 246, 0.2);
-            color: #3b82f6;
-        }
-
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8em;
-            }
-
-            .prices-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .price-value {
-                font-size: 1.6em;
-            }
-
-            .calendar-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .refresh-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 1.5em;
-            cursor: pointer;
-            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
-            transition: all 0.3s ease;
-        }
-
-        .refresh-btn:hover {
-            transform: scale(1.1) rotate(180deg);
-            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.6);
-        }
-
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #ef4444;
-            color: #fca5a5;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            margin: 20px 0;
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .sidebar { width: 90px; padding: 25px 15px; }
+            .sidebar span, .sidebar h2 { display: none; }
+            .main-content { margin-left: 90px; width: calc(100% - 90px); }
+            .price-value { font-size: 1.8em; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>📊 Finans Takip Platformu</h1>
-            <p>Gerçek Zamanlı Piyasa Verileri ve Ekonomik Takvim</p>
-        </header>
 
-        <div class="last-update" id="lastUpdate">
-            Son Güncelleme: Yükleniyor...
+    <div class="price-ticker">
+        <div class="ticker-content" id="tickerItems">Canlı Piyasalar Hazırlanıyor... Veriler Alınıyor...</div>
+    </div>
+
+    <div class="sidebar">
+        <h2>FINANCHATTING</h2>
+        <a href="/" class="nav-link {% if page == 'markets' %}active{% endif %}">
+            <span style="font-size:1.4em; margin-right:15px;">📊</span> <span>Piyasalar</span>
+        </a>
+        <a href="/feed" class="nav-link {% if page == 'feed' %}active{% endif %}">
+            <span style="font-size:1.4em; margin-right:15px;">📰</span> <span>Akış (Feed)</span>
+        </a>
+        <a href="/kesfet" class="nav-link {% if page == 'explore' %}active{% endif %}">
+            <span style="font-size:1.4em; margin-right:15px;">🌟</span> <span>Keşfet</span>
+        </a>
+        <a href="/@mehmet" class="nav-link {% if page == 'profile' %}active{% endif %}">
+            <span style="font-size:1.4em; margin-right:15px;">👤</span> <span>Profilim</span>
+        </a>
+        
+        <div style="position: absolute; bottom: 40px; left: 25px; font-size: 0.8em; color: #475569; line-height:1.6;">
+            <strong>F.G. VINTAGE</strong><br>
+            Yazılım Mühendisi<br>
+            Mehmet Bostancı
         </div>
+    </div>
 
-        <div id="loadingSection" class="loading">
-            <div class="spinner"></div>
-            <p>Veriler yükleniyor...</p>
-        </div>
+    <div class="main-content">
 
-        <div id="errorSection" style="display: none;"></div>
+        {% if page == 'markets' %}
+        <section id="markets">
+            <h1 style="margin-bottom: 35px; font-size: 2.2em; color: #10b981; font-weight:800; border-left: 6px solid #10b981; padding-left: 20px;">🔥 Piyasa İzleme</h1>
+            <div class="prices-grid" id="pricesGrid"></div>
+            
+            <h1 style="margin-top: 70px; margin-bottom: 35px; font-size: 2.2em; color: #3b82f6; font-weight:800; border-left: 6px solid #3b82f6; padding-left: 20px;">📅 Ekonomik Takvim</h1>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </section>
+        {% endif %}
 
-        <div id="pricesSection" style="display: none;">
-            <div class="prices-grid" id="pricesGrid">
+        {% if page == 'feed' or page == 'explore' %}
+        <section id="social">
+            <h1 style="margin-bottom: 45px; font-size: 2.5em; font-weight:800;">
+                {% if page == 'feed' %}📰 Güncel Finansal Akış{% else %}🌟 Haftanın Popülerleri{% endif %}
+            </h1>
+
+            <div class="post-card">
+                <div style="display:flex; gap:18px; align-items:center;">
+                    <div style="width:55px; height:55px; border-radius:50%; background:linear-gradient(135deg, #10b981, #3b82f6); display:flex; justify-content:center; align-items:center; font-weight:900; font-size:1.4em; color:white; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">M</div>
+                    <div>
+                        <div style="font-weight:800; font-size:1.2em;">@mehmet</div>
+                        <div style="font-size:0.85em; color:#64748b;">Şimdi Paylaşıldı</div>
+                    </div>
+                </div>
+                <p style="margin-top:25px; line-height:1.8; font-size:1.15em; color:#f1f5f9;">
+                    Gram Altın tarafında beklediğimiz 3100 TL seviyesi artık bir "psikolojik baraj". 
+                    ABD verileri bu akşam volatiliteyi artırabilir. Kademeli alım için destek noktalarını takipteyiz. ✨
+                </p>
+                <div class="rating-box">
+                    <div class="stars">
+                        <span class="star-icon">★</span><span class="star-icon">★</span><span class="star-icon">★</span><span class="star-icon">★</span><span style="color:#334155;">★</span>
+                        <span class="vote-count">4.0 / 5 (214 Oy Kullanıldı)</span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:35px; color:#94a3b8; font-size:1em; font-weight:600;">
+                    <span style="cursor:pointer;">💬 32 Yorum</span>
+                    <span style="cursor:pointer;">🔁 12 Paylaşım</span>
+                    <span style="color:#10b981; cursor:pointer;">❤️ Beğen</span>
+                </div>
             </div>
-        </div>
+        </section>
+        {% endif %}
 
-        <div class="calendar-section">
-            <h2 class="section-title">📅 Ekonomik Takvim</h2>
-            <div class="calendar-grid" id="calendarGrid">
+        {% if page == 'profile' %}
+        <section id="profile">
+            <div style="background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); padding: 70px; border-radius: 35px; border: 1px solid #334155; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.4);">
+                <div style="width:140px; height:140px; border-radius:50%; background:#10b981; margin:0 auto 30px; display:flex; justify-content:center; align-items:center; font-size:3.5em; font-weight:900; box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); border: 5px solid #1e293b;">{{ username[0]|upper }}</div>
+                <h1 style="font-size:2.8em; margin-bottom:15px; font-weight:900;">@{{ username }}</h1>
+                <p style="color:#94a3b8; font-size:1.2em; max-width:600px; margin:0 auto; line-height:1.6;">
+                    F.G. Vintage Yazılım Mühendisi. Finansal analizler, AI algoritmaları ve modern web teknolojileri üzerine çalışıyor.
+                </p>
+                <div style="margin-top:50px; display:flex; justify-content:center; gap:50px;">
+                    <div><div style="font-size:2em; font-weight:900; color:#10b981;">1.2K</div><div style="color:#64748b; font-weight:600;">Takipçi</div></div>
+                    <div><div style="font-size:2em; font-weight:900; color:#3b82f6;">840</div><div style="color:#64748b; font-weight:600;">Takip</div></div>
+                    <div><div style="font-size:2em; font-weight:900; color:#e2e8f0;">156</div><div style="color:#64748b; font-weight:600;">Analiz</div></div>
+                </div>
             </div>
-        </div>
+        </section>
+        {% endif %}
+
     </div>
 
     <div id="chartModal">
         <div class="modal-content">
-            <button class="close-btn" onclick="closeChart()">Kapat X</button>
+            <button class="close-btn" onclick="closeChart()">KAPAT X</button>
             <div id="tv_chart_container" style="height: 100%;"></div>
         </div>
     </div>
 
-    <button class="refresh-btn" onclick="loadAllData()" title="Verileri Yenile">
-        ↻
-    </button>
-
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-
     <script>
         const priceConfig = {
             gram_altin: { label: 'Gram Altın', icon: '✨', unit: 'TRY', decimals: 2, hasChart: false },
@@ -371,175 +308,64 @@
             bist100: { label: 'BIST 100', icon: '📈', unit: 'TRY', decimals: 2, hasChart: false }
         };
 
-        async function loadPrices() {
+        async function updateData() {
             try {
-                const response = await fetch('/api/prices');
-                if (!response.ok) throw new Error('Fiyatlar yüklenemedi');
+                const res = await fetch('/api/prices');
+                const data = await res.json();
                 
-                const data = await response.json();
-                const pricesGrid = document.getElementById('pricesGrid');
-                pricesGrid.innerHTML = '';
+                let tickerHtml = "";
+                const grid = document.getElementById('pricesGrid');
+                if(grid) grid.innerHTML = '';
 
                 for (const [key, config] of Object.entries(priceConfig)) {
-                    if (data[key] !== null && data[key] !== undefined) {
-                        const card = document.createElement('div');
-                        card.className = 'price-card';
+                    if (data[key]) {
+                        const val = data[key].toLocaleString('tr-TR', { minimumFractionDigits: config.decimals, maximumFractionDigits: config.decimals });
+                        tickerHtml += `<span style="color:#94a3b8">${config.icon} ${config.label}:</span> <span style="color:#10b981">${val}</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `;
                         
-                        if (config.hasChart) {
-                            card.style.cursor = 'pointer';
-                            card.onclick = () => openChart(config.tv);
+                        if(grid) {
+                            const card = document.createElement('div');
+                            card.className = 'price-card';
+                            if(config.hasChart) card.onclick = () => openChart(config.tv);
+                            card.innerHTML = `
+                                <div class="price-label">${config.icon} ${config.label}</div>
+                                <div class="price-value">${val}</div>
+                                <div style="font-size:0.95em; color:#64748b; font-weight:600;">${config.unit} ${config.hasChart ? '• Detaylı Analiz' : ''}</div>
+                            `;
+                            grid.appendChild(card);
                         }
-                        
-                        card.innerHTML = `
-                            <div class="price-label">
-                                <span class="price-icon">${config.icon}</span>
-                                <span>${config.label}</span>
-                            </div>
-                            <div class="price-value">
-                                ${formatNumber(data[key], config.decimals)}
-                            </div>
-                            <div class="price-unit">${config.unit} ${config.hasChart ? '• <small style="color:#10b981">Analiz İçin Tıkla</small>' : ''}</div>
-                        `;
-                        pricesGrid.appendChild(card);
                     }
                 }
-
-                const updateTime = new Date(data.timestamp);
-                document.getElementById('lastUpdate').textContent = 
-                    `Son Güncelleme: ${updateTime.toLocaleString('tr-TR')}`;
-
-                document.getElementById('loadingSection').style.display = 'none';
-                document.getElementById('pricesSection').style.display = 'block';
-                document.getElementById('errorSection').style.display = 'none';
-
-            } catch (error) {
-                console.error('Hata:', error);
-                showError('Fiyat verileri yüklenirken bir hata oluştu.');
-            }
+                document.getElementById('tickerItems').innerHTML = tickerHtml + tickerHtml + tickerHtml;
+            } catch (e) { console.error("Veri Güncelleme Hatası:", e); }
         }
 
         function openChart(symbol) {
             document.getElementById('chartModal').style.display = 'block';
             new TradingView.widget({
-                "autosize": true,
-                "symbol": symbol,
-                "interval": "60",
-                "timezone": "Europe/Istanbul",
-                "theme": "dark",
-                "style": "1",
-                "locale": "tr",
-                "toolbar_bg": "#f1f3f6",
-                "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
-                "container_id": "tv_chart_container",
-                "studies": [
-                    "Volume@tv-basicstudies",
-                    "PivotPointsHighLow@tv-basicstudies"
-                ]
+                "autosize": true, "symbol": symbol, "interval": "60", "timezone": "Europe/Istanbul",
+                "theme": "dark", "style": "1", "locale": "tr", "container_id": "tv_chart_container",
+                "studies": [ "Volume@tv-basicstudies", "PivotPointsHighLow@tv-basicstudies" ]
             });
         }
-
-        function closeChart() {
-            document.getElementById('chartModal').style.display = 'none';
-            document.getElementById('tv_chart_container').innerHTML = '';
-        }
+        function closeChart() { document.getElementById('chartModal').style.display = 'none'; }
 
         async function loadCalendar() {
             try {
-                const response = await fetch('/api/calendar');
-                if (!response.ok) throw new Error('Takvim yüklenemedi');
-                
-                const data = await response.json();
-                const calendarGrid = document.getElementById('calendarGrid');
-                calendarGrid.innerHTML = '';
-
-                const fedCard = createCalendarCard(
-                    '🇺🇸 FED Faiz Oranı',
-                    `${data.fed_rate.current}%`,
-                    `Sonraki: ${formatDate(data.fed_rate.next_meeting)}`,
-                    'blue'
-                );
-                calendarGrid.appendChild(fedCard);
-
-                const nfpCard = createCalendarCard(
-                    `🇺🇸 ${data.nonfarm_payroll.label}`,
-                    data.nonfarm_payroll.value,
-                    `Önceki: ${data.nonfarm_payroll.previous}`,
-                    'green',
-                    formatDate(data.nonfarm_payroll.date)
-                );
-                calendarGrid.appendChild(nfpCard);
-
-                const unemploymentCard = createCalendarCard(
-                    `🇺🇸 ${data.unemployment.label}`,
-                    data.unemployment.value,
-                    `Önceki: ${data.unemployment.previous}`,
-                    'red',
-                    formatDate(data.unemployment.date)
-                );
-                calendarGrid.appendChild(unemploymentCard);
-
-                const inflationCard = createCalendarCard(
-                    `🇹🇷 ${data.inflation.label}`,
-                    data.inflation.value,
-                    `Önceki: ${data.inflation.previous}`,
-                    'badge-red',
-                    'Güncel Veri'
-                );
-                calendarGrid.appendChild(inflationCard);
-
-            } catch (error) {
-                console.error('Takvim hatası:', error);
-            }
+                const res = await fetch('/api/calendar');
+                const data = await res.json();
+                const calGrid = document.getElementById('calendarGrid');
+                if(!calGrid) return;
+                calGrid.innerHTML = `
+                    <div class="calendar-card">🇺🇸 <strong>FED Kararı:</strong> <br><span style="font-size:2em; color:#3b82f6; font-weight:800;">%${data.fed_rate.current}</span></div>
+                    <div class="calendar-card">🇺🇸 <strong>İstihdam (NFP):</strong> <br><span style="font-size:2em; color:#10b981; font-weight:800;">${data.nonfarm_payroll.value}</span></div>
+                    <div class="calendar-card">🇺🇸 <strong>İşsizlik:</strong> <br><span style="font-size:2em; color:#ef4444; font-weight:800;">%${data.unemployment.value}</span></div>
+                    <div class="calendar-card">🇹🇷 <strong>TÜFE (Yıllık):</strong> <br><span style="font-size:2em; color:#10b981; font-weight:800;">%${data.inflation.value}</span></div>
+                `;
+            } catch(e) {}
         }
 
-        function createCalendarCard(label, value, meta, badgeColor, date = null) {
-            const card = document.createElement('div');
-            card.className = 'calendar-card';
-            
-            card.innerHTML = `
-                <div class="calendar-label">${label}</div>
-                <div class="calendar-value">${value}</div>
-                <div class="calendar-meta">
-                    <span>${meta}</span>
-                    ${date ? `<span class="badge badge-${badgeColor}">${date}</span>` : ''}
-                </div>
-            `;
-            
-            return card;
-        }
-
-        function formatNumber(num, decimals = 2) {
-            return Number(num).toLocaleString('tr-TR', {
-                minimumFractionDigits: decimals,
-                maximumFractionDigits: decimals
-            });
-        }
-
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('tr-TR', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-            });
-        }
-
-        function showError(message) {
-            const errorSection = document.getElementById('errorSection');
-            errorSection.innerHTML = `<div class="error-message">${message}</div>`;
-            errorSection.style.display = 'block';
-            document.getElementById('loadingSection').style.display = 'none';
-        }
-
-        async function loadAllData() {
-            document.getElementById('loadingSection').style.display = 'block';
-            await Promise.all([loadPrices(), loadCalendar()]);
-        }
-
-        loadAllData();
-        setInterval(loadAllData, 30000);
+        updateData(); loadCalendar();
+        setInterval(updateData, 30000);
     </script>
 </body>
 </html>
