@@ -13,7 +13,7 @@
             color: #e2e8f0;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
+            overflow-x: hidden;
         }
 
         /* --- TICKER: ÜST KAYAN ŞERİT --- */
@@ -41,7 +41,7 @@
             100% { transform: translateX(-100%); }
         }
 
-        /* --- SIDEBAR: SOL MENÜ --- */
+        /* --- SIDEBAR: SOL MENÜ (TWITTER TARZI) --- */
         .sidebar {
             width: 280px;
             height: 100vh;
@@ -52,7 +52,6 @@
             padding: 40px 25px;
             border-right: 1px solid #334155;
             z-index: 1000;
-            transition: all 0.3s ease;
         }
         .sidebar h2 {
             color: #10b981;
@@ -73,84 +72,89 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 600;
         }
-        .nav-link:hover {
-            background: rgba(16, 185, 129, 0.12);
+        .nav-link:hover, .nav-link.active {
+            background: rgba(16, 185, 129, 0.15);
             color: #10b981;
             transform: translateX(8px);
         }
         .nav-link.active {
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.25) 0%, transparent 100%);
-            color: #10b981;
             border-left: 5px solid #10b981;
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.2) 0%, transparent 100%);
         }
 
-        /* --- ANA İÇERİK --- */
+        /* --- ANA İÇERİK ALANI --- */
         .main-content {
             margin-left: 280px;
-            margin-top: 65px;
-            padding: 45px;
+            margin-top: 70px;
+            padding: 40px;
             width: calc(100% - 280px);
-            max-width: 1400px;
+            max-width: 1200px;
         }
 
-        /* --- MARKET KARTLARI --- */
+        /* --- MARKET KARTLARI (ESKİ TEKNİK YAPI) --- */
         .prices-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 30px;
-            margin-bottom: 70px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 60px;
         }
         .price-card {
             background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
             border: 1px solid #334155;
-            border-radius: 24px;
-            padding: 35px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.4s ease;
             cursor: pointer;
             position: relative;
-            overflow: hidden;
-        }
-        .price-card::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
-            background: #10b981; transform: scaleX(0); transition: 0.4s;
         }
         .price-card:hover {
-            transform: translateY(-12px);
+            transform: translateY(-10px);
             border-color: #10b981;
-            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.2);
         }
-        .price-card:hover::after { transform: scaleX(1); }
-        .price-label { font-size: 0.9em; color: #94a3b8; text-transform: uppercase; margin-bottom: 18px; letter-spacing: 1.5px; }
-        .price-value { font-size: 2.4em; color: #10b981; font-weight: 800; margin-bottom: 12px; letter-spacing: -1px; }
+        .price-label { font-size: 0.9em; color: #94a3b8; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; }
+        .price-value { font-size: 2.2em; color: #10b981; font-weight: bold; }
 
-        /* --- SOSYAL FEED VE YILDIZLAR --- */
+        /* --- SOSYAL PAYLAŞIM KUTUSU --- */
+        .post-box {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid #10b981;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .post-box textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2em;
+            outline: none;
+            resize: none;
+            margin-bottom: 15px;
+        }
+
+        /* --- POST KARTLARI VE YILDIZLAR --- */
         .post-card {
             background: #1e293b;
             border: 1px solid #334155;
-            border-radius: 24px;
-            padding: 30px;
-            margin-bottom: 35px;
-            max-width: 850px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
             transition: 0.3s;
         }
         .post-card:hover { border-color: #3b82f6; }
-        .rating-box {
-            margin: 25px 0;
-            padding: 20px 0;
-            border-top: 1px solid #334155;
-            border-bottom: 1px solid #334155;
-        }
         .stars {
             color: #fbbf24;
-            font-size: 1.7em;
+            font-size: 1.4em;
+            margin-top: 15px;
             display: flex;
-            gap: 8px;
             align-items: center;
+            gap: 5px;
         }
         .star-icon { cursor: pointer; transition: 0.2s; }
-        .star-icon:hover { transform: scale(1.3) rotate(15deg); color: #f59e0b; }
-        .vote-count { font-size: 0.85em; color: #64748b; margin-left: 15px; font-weight: 500; }
+        .star-icon:hover { transform: scale(1.2); }
 
         /* --- MODAL VE GRAFİK --- */
         #chartModal {
@@ -158,131 +162,106 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.98);
+            background: rgba(0, 0, 0, 0.95);
             z-index: 20000;
-            backdrop-filter: blur(10px);
         }
         .modal-content {
-            width: 96%; height: 94%; margin: 1.5% auto; position: relative;
+            width: 95%; height: 90%; margin: 2% auto; position: relative;
         }
         .close-btn {
-            position: absolute; top: 15px; right: 25px;
+            position: absolute; top: 15px; right: 20px;
             background: #ef4444; color: white; border: none;
-            padding: 14px 30px; border-radius: 12px; cursor: pointer;
-            font-weight: 800; transition: 0.3s; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+            padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold;
         }
-        .close-btn:hover { background: #dc2626; transform: translateY(-3px); }
 
         /* --- EKONOMİK TAKVİM --- */
         .calendar-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
         }
         .calendar-card {
-            background: linear-gradient(145deg, #1e293b, #111827);
-            padding: 35px;
-            border-radius: 24px;
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 20px;
             border: 1px solid #334155;
-            transition: 0.4s;
         }
-        .calendar-card:hover { border-color: #3b82f6; transform: scale(1.02); }
 
-        /* --- RESPONSIVE --- */
         @media (max-width: 1024px) {
-            .sidebar { width: 90px; padding: 25px 15px; }
+            .sidebar { width: 80px; padding: 20px 10px; }
             .sidebar span, .sidebar h2 { display: none; }
-            .main-content { margin-left: 90px; width: calc(100% - 90px); }
-            .price-value { font-size: 1.8em; }
+            .main-content { margin-left: 80px; width: calc(100% - 80px); }
         }
     </style>
 </head>
 <body>
 
     <div class="price-ticker">
-        <div class="ticker-content" id="tickerItems">Canlı Piyasalar Hazırlanıyor... Veriler Alınıyor...</div>
+        <div class="ticker-content" id="tickerItems">Piyasalar Hazırlanıyor...</div>
     </div>
 
     <div class="sidebar">
         <h2>FINANCHATTING</h2>
         <a href="/" class="nav-link {% if page == 'markets' %}active{% endif %}">
-            <span style="font-size:1.4em; margin-right:15px;">📊</span> <span>Piyasalar</span>
+            <span style="font-size:1.3em; margin-right:15px;">📊</span> <span>Piyasalar</span>
         </a>
         <a href="/feed" class="nav-link {% if page == 'feed' %}active{% endif %}">
-            <span style="font-size:1.4em; margin-right:15px;">📰</span> <span>Akış (Feed)</span>
+            <span style="font-size:1.3em; margin-right:15px;">📰</span> <span>Akış (Feed)</span>
         </a>
         <a href="/kesfet" class="nav-link {% if page == 'explore' %}active{% endif %}">
-            <span style="font-size:1.4em; margin-right:15px;">🌟</span> <span>Keşfet</span>
+            <span style="font-size:1.3em; margin-right:15px;">🌟</span> <span>Keşfet</span>
         </a>
         <a href="/@mehmet" class="nav-link {% if page == 'profile' %}active{% endif %}">
-            <span style="font-size:1.4em; margin-right:15px;">👤</span> <span>Profilim</span>
+            <span style="font-size:1.3em; margin-right:15px;">👤</span> <span>Profilim</span>
         </a>
-        
-        <div style="position: absolute; bottom: 40px; left: 25px; font-size: 0.8em; color: #475569; line-height:1.6;">
-            <strong>F.G. VINTAGE</strong><br>
-            Yazılım Mühendisi<br>
-            Mehmet Bostancı
-        </div>
     </div>
 
     <div class="main-content">
 
         {% if page == 'markets' %}
-        <section id="markets">
-            <h1 style="margin-bottom: 35px; font-size: 2.2em; color: #10b981; font-weight:800; border-left: 6px solid #10b981; padding-left: 20px;">🔥 Piyasa İzleme</h1>
+        <section>
+            <h1 style="margin-bottom: 30px; font-size: 2em; color: #10b981;">📈 Canlı Takip Paneli</h1>
             <div class="prices-grid" id="pricesGrid"></div>
             
-            <h1 style="margin-top: 70px; margin-bottom: 35px; font-size: 2.2em; color: #3b82f6; font-weight:800; border-left: 6px solid #3b82f6; padding-left: 20px;">📅 Ekonomik Takvim</h1>
+            <h1 style="margin-top: 50px; margin-bottom: 30px; font-size: 2em; color: #3b82f6;">📅 Ekonomik Takvim</h1>
             <div class="calendar-grid" id="calendarGrid"></div>
         </section>
         {% endif %}
 
-        {% if page == 'feed' or page == 'explore' %}
-        <section id="social">
-            <h1 style="margin-bottom: 45px; font-size: 2.5em; font-weight:800;">
-                {% if page == 'feed' %}📰 Güncel Finansal Akış{% else %}🌟 Haftanın Popülerleri{% endif %}
+        {% if page == 'feed' or page == 'explore' or page == 'profile' %}
+        <section>
+            <h1 style="margin-bottom: 35px;">
+                {% if page == 'feed' %}📰 Analiz Akışı{% elif page == 'explore' %}🌟 En Popülerler{% else %}👤 @{{ username }}{% endif %}
             </h1>
 
-            <div class="post-card">
-                <div style="display:flex; gap:18px; align-items:center;">
-                    <div style="width:55px; height:55px; border-radius:50%; background:linear-gradient(135deg, #10b981, #3b82f6); display:flex; justify-content:center; align-items:center; font-weight:900; font-size:1.4em; color:white; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">M</div>
-                    <div>
-                        <div style="font-weight:800; font-size:1.2em;">@mehmet</div>
-                        <div style="font-size:0.85em; color:#64748b;">Şimdi Paylaşıldı</div>
+            {% if page == 'feed' %}
+            <div class="post-box">
+                <form action="/post" method="POST">
+                    <textarea name="content" placeholder="Piyasalar hakkında ne düşünüyorsun?" required></textarea>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button type="submit" style="background:#10b981; color:white; border:none; padding:12px 30px; border-radius:12px; font-weight:bold; cursor:pointer;">Paylaş</button>
                     </div>
-                </div>
-                <p style="margin-top:25px; line-height:1.8; font-size:1.15em; color:#f1f5f9;">
-                    Gram Altın tarafında beklediğimiz 3100 TL seviyesi artık bir "psikolojik baraj". 
-                    ABD verileri bu akşam volatiliteyi artırabilir. Kademeli alım için destek noktalarını takipteyiz. ✨
-                </p>
-                <div class="rating-box">
-                    <div class="stars">
-                        <span class="star-icon">★</span><span class="star-icon">★</span><span class="star-icon">★</span><span class="star-icon">★</span><span style="color:#334155;">★</span>
-                        <span class="vote-count">4.0 / 5 (214 Oy Kullanıldı)</span>
-                    </div>
-                </div>
-                <div style="display:flex; gap:35px; color:#94a3b8; font-size:1em; font-weight:600;">
-                    <span style="cursor:pointer;">💬 32 Yorum</span>
-                    <span style="cursor:pointer;">🔁 12 Paylaşım</span>
-                    <span style="color:#10b981; cursor:pointer;">❤️ Beğen</span>
-                </div>
+                </form>
             </div>
-        </section>
-        {% endif %}
+            {% endif %}
 
-        {% if page == 'profile' %}
-        <section id="profile">
-            <div style="background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); padding: 70px; border-radius: 35px; border: 1px solid #334155; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.4);">
-                <div style="width:140px; height:140px; border-radius:50%; background:#10b981; margin:0 auto 30px; display:flex; justify-content:center; align-items:center; font-size:3.5em; font-weight:900; box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); border: 5px solid #1e293b;">{{ username[0]|upper }}</div>
-                <h1 style="font-size:2.8em; margin-bottom:15px; font-weight:900;">@{{ username }}</h1>
-                <p style="color:#94a3b8; font-size:1.2em; max-width:600px; margin:0 auto; line-height:1.6;">
-                    F.G. Vintage Yazılım Mühendisi. Finansal analizler, AI algoritmaları ve modern web teknolojileri üzerine çalışıyor.
-                </p>
-                <div style="margin-top:50px; display:flex; justify-content:center; gap:50px;">
-                    <div><div style="font-size:2em; font-weight:900; color:#10b981;">1.2K</div><div style="color:#64748b; font-weight:600;">Takipçi</div></div>
-                    <div><div style="font-size:2em; font-weight:900; color:#3b82f6;">840</div><div style="color:#64748b; font-weight:600;">Takip</div></div>
-                    <div><div style="font-size:2em; font-weight:900; color:#e2e8f0;">156</div><div style="color:#64748b; font-weight:600;">Analiz</div></div>
+            <div id="postsList">
+                {% for post in posts %}
+                <div class="post-card">
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <div style="width:45px; height:45px; border-radius:50%; background:linear-gradient(45deg, #10b981, #3b82f6); display:flex; justify-content:center; align-items:center; font-weight:bold;">{{ post.username[0]|upper }}</div>
+                        <div>
+                            <strong>@{{ post.username }}</strong>
+                            <div style="font-size:0.8em; color:#64748b;">{{ post.time }}</div>
+                        </div>
+                    </div>
+                    <p style="margin-top:20px; line-height:1.6; font-size:1.1em;">{{ post.content }}</p>
+                    <div class="stars">
+                        <span class="star-icon">★</span><span class="star-icon">★</span><span class="star-icon">★</span><span class="star-icon">★</span><span style="color:#475569;">★</span>
+                        <span style="font-size:0.65em; color:#94a3b8; margin-left:10px;">(4.0 / 5 - {{ post.votes }} Oy)</span>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
         </section>
         {% endif %}
@@ -312,31 +291,25 @@
             try {
                 const res = await fetch('/api/prices');
                 const data = await res.json();
-                
                 let tickerHtml = "";
                 const grid = document.getElementById('pricesGrid');
                 if(grid) grid.innerHTML = '';
 
                 for (const [key, config] of Object.entries(priceConfig)) {
                     if (data[key]) {
-                        const val = data[key].toLocaleString('tr-TR', { minimumFractionDigits: config.decimals, maximumFractionDigits: config.decimals });
-                        tickerHtml += `<span style="color:#94a3b8">${config.icon} ${config.label}:</span> <span style="color:#10b981">${val}</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `;
-                        
+                        const val = data[key].toLocaleString('tr-TR', { minimumFractionDigits: config.decimals });
+                        tickerHtml += `${config.icon} ${config.label}: ${val} • `;
                         if(grid) {
                             const card = document.createElement('div');
                             card.className = 'price-card';
                             if(config.hasChart) card.onclick = () => openChart(config.tv);
-                            card.innerHTML = `
-                                <div class="price-label">${config.icon} ${config.label}</div>
-                                <div class="price-value">${val}</div>
-                                <div style="font-size:0.95em; color:#64748b; font-weight:600;">${config.unit} ${config.hasChart ? '• Detaylı Analiz' : ''}</div>
-                            `;
+                            card.innerHTML = `<div class="price-label">${config.icon} ${config.label}</div><div class="price-value">${val}</div><div style="font-size:0.85em; color:#64748b;">${config.unit} ${config.hasChart ? '• Analiz' : ''}</div>`;
                             grid.appendChild(card);
                         }
                     }
                 }
-                document.getElementById('tickerItems').innerHTML = tickerHtml + tickerHtml + tickerHtml;
-            } catch (e) { console.error("Veri Güncelleme Hatası:", e); }
+                document.getElementById('tickerItems').innerHTML = tickerHtml + tickerHtml;
+            } catch (e) { console.error(e); }
         }
 
         function openChart(symbol) {
@@ -354,12 +327,9 @@
                 const res = await fetch('/api/calendar');
                 const data = await res.json();
                 const calGrid = document.getElementById('calendarGrid');
-                if(!calGrid) return;
-                calGrid.innerHTML = `
-                    <div class="calendar-card">🇺🇸 <strong>FED Kararı:</strong> <br><span style="font-size:2em; color:#3b82f6; font-weight:800;">%${data.fed_rate.current}</span></div>
-                    <div class="calendar-card">🇺🇸 <strong>İstihdam (NFP):</strong> <br><span style="font-size:2em; color:#10b981; font-weight:800;">${data.nonfarm_payroll.value}</span></div>
-                    <div class="calendar-card">🇺🇸 <strong>İşsizlik:</strong> <br><span style="font-size:2em; color:#ef4444; font-weight:800;">%${data.unemployment.value}</span></div>
-                    <div class="calendar-card">🇹🇷 <strong>TÜFE (Yıllık):</strong> <br><span style="font-size:2em; color:#10b981; font-weight:800;">%${data.inflation.value}</span></div>
+                if(calGrid) calGrid.innerHTML = `
+                    <div class="calendar-card">🇺🇸 <strong>FED Kararı:</strong> <span style="color:#10b981">%${data.fed_rate.current}</span></div>
+                    <div class="calendar-card">🇹🇷 <strong>TÜFE (Yıllık):</strong> <span style="color:#10b981">%${data.inflation.value}</span></div>
                 `;
             } catch(e) {}
         }
