@@ -235,6 +235,7 @@ def _refresh_cache_background():
 
 
 def get_financial_data():
+ 
     global _refreshing
 
     now = time.time()
@@ -242,15 +243,34 @@ def get_financial_data():
         cached = _last_good["data"]
         age = now - _last_good["ts"]
 
+    # Cache tazeyse direkt dön
     if cached and age < CACHE_TTL_SECONDS:
         return cached
 
-    # cache var ama bayat -> hemen cache dön, arkada yenile
+    # Cache bayatsa: bekletme, arkada yenile
     if cached:
         if not _refreshing:
             _refreshing = True
             threading.Thread(target=_refresh_cache_background, daemon=True).start()
         return cached
+
+    # Cache yoksa: yine bekletme -> placeholder dön, arkada yenile
+    if not _refreshing:
+        _refreshing = True
+        threading.Thread(target=_refresh_cache_background, daemon=True).start()
+
+    # Frontend sadece null görür, UI kırılmaz (zaten null kontrolün vardı)
+    return {
+        "btc": None,
+        "gold": None,
+        "silver": None,
+        "copper": None,
+        "usd_try": None,
+        "eur_try": None,
+        "bist100": None,
+        "gram_altin": None,
+        "timestamp": datetime.now().isoformat(),
+    }
 
     # cache yok -> 1 kere senkron dene
     data = _fetch_prices_once()
