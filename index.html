@@ -1,260 +1,483 @@
 <!DOCTYPE html>
+
 <html lang="tr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>📊 Finans Network</title>
-
-    <!-- Charts -->
-    <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
-
-    <!-- Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finans Takip - Canlı Piyasa Verileri</title>
     <style>
-        :root {
-            --bg:#0f1419;
-            --card:#1c2128;
-            --border:#30363d;
-            --primary:#3b82f6;
-            --text:#e5e7eb;
-            --muted:#94a3b8;
-            --danger:#ef4444;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        * { box-sizing: border-box; margin:0; padding:0; }
+```
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #e2e8f0;
+        min-height: 100vh;
+        padding: 20px;
+    }
 
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            padding: 20px;
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    header {
+        text-align: center;
+        padding: 30px 0;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #334155;
+    }
+
+    header h1 {
+        font-size: 2.5em;
+        color: #10b981;
+        margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+
+    header p {
+        color: #94a3b8;
+        font-size: 1.1em;
+    }
+
+    .last-update {
+        text-align: center;
+        color: #64748b;
+        margin-bottom: 20px;
+        font-size: 0.9em;
+    }
+
+    .prices-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 50px;
+    }
+
+    .price-card {
+        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid #334155;
+        border-radius: 15px;
+        padding: 25px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .price-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #10b981, #3b82f6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .price-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+        border-color: #10b981;
+    }
+
+    .price-card:hover::before {
+        opacity: 1;
+    }
+
+    .price-label {
+        font-size: 0.9em;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .price-icon {
+        font-size: 1.3em;
+    }
+
+    .price-value {
+        font-size: 2em;
+        color: #10b981;
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .price-unit {
+        font-size: 0.85em;
+        color: #64748b;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 50px;
+        color: #64748b;
+    }
+
+    .spinner {
+        border: 3px solid #334155;
+        border-top: 3px solid #10b981;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .calendar-section {
+        margin-top: 50px;
+    }
+
+    .section-title {
+        font-size: 2em;
+        color: #10b981;
+        margin-bottom: 30px;
+        text-align: center;
+        position: relative;
+        padding-bottom: 15px;
+    }
+
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 3px;
+        background: linear-gradient(90deg, #10b981, #3b82f6);
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+    }
+
+    .calendar-card {
+        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid #334155;
+        border-radius: 15px;
+        padding: 30px;
+        transition: all 0.3s ease;
+    }
+
+    .calendar-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+        border-color: #3b82f6;
+    }
+
+    .calendar-label {
+        font-size: 1.1em;
+        color: #94a3b8;
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+
+    .calendar-value {
+        font-size: 2.2em;
+        color: #3b82f6;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .calendar-meta {
+        color: #64748b;
+        font-size: 0.9em;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #334155;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    .badge-green {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+    }
+
+    .badge-red {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+    }
+
+    .badge-blue {
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+    }
+
+    @media (max-width: 768px) {
+        header h1 {
+            font-size: 1.8em;
         }
 
-        .nav {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:12px;
-            padding:16px 24px;
-            margin-bottom:24px;
-            flex-wrap:wrap;
-            gap:12px;
+        .prices-grid {
+            grid-template-columns: 1fr;
         }
 
-        .nav-links span {
-            margin-right:16px;
-            cursor:pointer;
-            font-weight:600;
-            color:var(--muted);
+        .price-value {
+            font-size: 1.6em;
         }
 
-        .nav-links span.active {
-            color:white;
-            background:var(--primary);
-            padding:6px 12px;
-            border-radius:8px;
+        .calendar-grid {
+            grid-template-columns: 1fr;
         }
+    }
 
-        .btn {
-            padding:10px 18px;
-            border-radius:8px;
-            border:none;
-            cursor:pointer;
-            font-weight:600;
-        }
+    .refresh-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        font-size: 1.5em;
+        cursor: pointer;
+        box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+        transition: all 0.3s ease;
+    }
 
-        .btn.primary { background:var(--primary); color:white; }
-        .btn.secondary { background:transparent; border:1px solid var(--border); color:var(--muted); }
+    .refresh-btn:hover {
+        transform: scale(1.1) rotate(180deg);
+        box-shadow: 0 8px 30px rgba(16, 185, 129, 0.6);
+    }
 
-        .section { display:none; }
-        .section.active { display:block; }
+    .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid #ef4444;
+        color: #fca5a5;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        margin: 20px 0;
+    }
+</style>
+```
 
-        .grid {
-            display:grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap:16px;
-        }
-
-        .card {
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:12px;
-            padding:18px;
-            cursor:pointer;
-            transition:.2s;
-        }
-
-        .card:hover {
-            transform:translateY(-4px);
-            border-color:var(--primary);
-        }
-
-        .price {
-            font-size:22px;
-            font-weight:900;
-            margin-top:8px;
-        }
-
-        .container {
-            max-width:900px;
-            margin:0 auto;
-        }
-
-        .post {
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:12px;
-            padding:16px;
-            margin-bottom:12px;
-            cursor:pointer;
-        }
-
-        textarea,input {
-            width:100%;
-            background:#0b0f14;
-            color:white;
-            border:1px solid var(--border);
-            border-radius:8px;
-            padding:12px;
-            margin-bottom:10px;
-        }
-
-        .modal {
-            position:fixed;
-            inset:0;
-            background:rgba(0,0,0,.85);
-            display:none;
-            align-items:center;
-            justify-content:center;
-            z-index:1000;
-        }
-
-        .modal-box {
-            background:var(--card);
-            border:1px solid var(--border);
-            border-radius:16px;
-            padding:24px;
-            width:90%;
-            max-width:900px;
-            max-height:90vh;
-            overflow:auto;
-        }
-
-        .center { text-align:center; }
-        .muted { color:var(--muted); }
-    </style>
 </head>
-
 <body>
-
-<div class="nav">
-    <h2 style="color:var(--primary)">📊 Finans Network</h2>
-
-    <div class="nav-links" id="nav-links" style="display:none;">
-        <span class="active" onclick="showSection('market')">Piyasa</span>
-        <span onclick="showSection('feed')">Feed</span>
-        <span onclick="showSection('profile')">Profil</span>
-    </div>
-
-    <div id="auth-ui">
-        <button class="btn primary" onclick="openAuth('login')">Giriş</button>
-        <button class="btn secondary" onclick="openAuth('reg')">Kayıt</button>
-    </div>
-
-    <div id="user-ui" style="display:none;">
-        <span id="user-avatar"></span>
-        <b id="user-name"></b>
-        <button class="btn secondary" onclick="logout()">Çıkış</button>
-    </div>
-</div>
-
-<!-- MARKET -->
-<div id="market-section" class="section active">
-    <h2 class="center">💹 Piyasa</h2>
-    <div class="grid" id="market-list">
-        <p class="muted center">Yükleniyor…</p>
-    </div>
-
-    <h2 class="center" style="margin-top:32px;">📅 Ekonomik Takvim</h2>
-    <div class="grid" id="economic-calendar">
-        <p class="muted center">Yükleniyor…</p>
-    </div>
-</div>
-
-<!-- FEED -->
-<div id="feed-section" class="section">
     <div class="container">
-        <div id="post-box" style="display:none;">
-            <textarea id="post-input" placeholder="Piyasa yorumu yaz…"></textarea>
-            <button class="btn primary" onclick="submitPost()">Paylaş</button>
-        </div>
+        <header>
+            <h1>📊 Finans Takip Platformu</h1>
+            <p>Gerçek Zamanlı Piyasa Verileri ve Ekonomik Takvim</p>
+        </header>
 
-        <h3 style="margin:20px 0;">🌐 Global Feed</h3>
-        <div id="global-feed">
-            <p class="muted center">Yükleniyor…</p>
+```
+    <div class="last-update" id="lastUpdate">
+        Son Güncelleme: Yükleniyor...
+    </div>
+
+    <div id="loadingSection" class="loading">
+        <div class="spinner"></div>
+        <p>Veriler yükleniyor...</p>
+    </div>
+
+    <div id="errorSection" style="display: none;"></div>
+
+    <div id="pricesSection" style="display: none;">
+        <div class="prices-grid" id="pricesGrid">
+            <!-- Dinamik olarak doldurulacak -->
+        </div>
+    </div>
+
+    <div class="calendar-section">
+        <h2 class="section-title">📅 Ekonomik Takvim</h2>
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- Dinamik olarak doldurulacak -->
         </div>
     </div>
 </div>
 
-<!-- PROFILE -->
-<div id="profile-section" class="section">
-    <div class="container center">
-        <div id="profile-avatar" style="font-size:72px;">👤</div>
-        <h2 id="profile-username">@user</h2>
-        <p id="profile-fullname" class="muted"></p>
-        <p id="profile-bio"></p>
+<button class="refresh-btn" onclick="loadAllData()" title="Verileri Yenile">
+    ↻
+</button>
 
-        <div style="margin:20px 0;">
-            <span><b id="profile-posts">0</b> Gönderi</span> ·
-            <span><b id="profile-comments">0</b> Yorum</span>
-        </div>
+<script>
+    const priceConfig = {
+        btc: { label: 'Bitcoin', icon: '₿', unit: 'USD', decimals: 2 },
+        gold: { label: 'Altın (Ons)', icon: '🥇', unit: 'USD', decimals: 2 },
+        silver: { label: 'Gümüş (Ons)', icon: '🥈', unit: 'USD', decimals: 2 },
+        copper: { label: 'Bakır (Ons)', icon: '🔶', unit: 'USD', decimals: 4 },
+        usd_try: { label: 'Dolar / TL', icon: '💵', unit: 'TRY', decimals: 4 },
+        eur_try: { label: 'Euro / TL', icon: '💶', unit: 'TRY', decimals: 4 },
+        bist100: { label: 'BIST 100', icon: '📈', unit: '', decimals: 2 }
+    };
 
-        <button class="btn primary" onclick="openProfileEdit()">Profili Düzenle</button>
+    async function loadPrices() {
+        try {
+            const response = await fetch('/api/prices');
+            if (!response.ok) throw new Error('Fiyatlar yüklenemedi');
+            
+            const data = await response.json();
+            
+            const pricesGrid = document.getElementById('pricesGrid');
+            pricesGrid.innerHTML = '';
 
-        <h3 style="margin-top:30px;">Gönderilerim</h3>
-        <div id="profile-posts-list">
-            <p class="muted center">Yükleniyor…</p>
-        </div>
-    </div>
-</div>
+            for (const [key, config] of Object.entries(priceConfig)) {
+                if (data[key] !== null && data[key] !== undefined) {
+                    const card = document.createElement('div');
+                    card.className = 'price-card';
+                    card.innerHTML = `
+                        <div class="price-label">
+                            <span class="price-icon">${config.icon}</span>
+                            <span>${config.label}</span>
+                        </div>
+                        <div class="price-value">
+                            ${formatNumber(data[key], config.decimals)}
+                        </div>
+                        <div class="price-unit">${config.unit}</div>
+                    `;
+                    pricesGrid.appendChild(card);
+                }
+            }
 
-<!-- ASSET MODAL -->
-<div id="asset-modal" class="modal">
-    <div class="modal-box">
-        <h2 id="modal-title" class="center"></h2>
-        <div id="candlestick-chart-container" style="height:420px;"></div>
+            // Son güncelleme zamanını göster
+            const updateTime = new Date(data.timestamp);
+            document.getElementById('lastUpdate').textContent = 
+                `Son Güncelleme: ${updateTime.toLocaleString('tr-TR')}`;
 
-        <h3 style="margin-top:20px;">💬 Yorumlar</h3>
-        <div id="comment-box" style="display:none;">
-            <textarea id="comment-input" placeholder="Yorum yaz…"></textarea>
-            <button class="btn primary" onclick="submitComment()">Yorum Yap</button>
-        </div>
-        <div id="comments-list"></div>
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('pricesSection').style.display = 'block';
+            document.getElementById('errorSection').style.display = 'none';
 
-        <div class="center" style="margin-top:20px;">
-            <button class="btn secondary" onclick="closeAssetModal()">Kapat</button>
-        </div>
-    </div>
-</div>
+        } catch (error) {
+            console.error('Hata:', error);
+            showError('Fiyat verileri yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.');
+        }
+    }
 
-<!-- AUTH MODAL -->
-<div id="auth-modal" class="modal">
-    <div class="modal-box" style="max-width:400px;">
-        <h3 id="auth-title" class="center"></h3>
+    async function loadCalendar() {
+        try {
+            const response = await fetch('/api/calendar');
+            if (!response.ok) throw new Error('Takvim yüklenemedi');
+            
+            const data = await response.json();
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
 
-        <input id="af-fn" placeholder="Ad Soyad" style="display:none;">
-        <input id="af-un" placeholder="Kullanıcı Adı">
-        <input id="af-ps" type="password" placeholder="Şifre">
+            // FED Faiz Kararı
+            const fedCard = createCalendarCard(
+                'FED Faiz Oranı',
+                `${data.fed_rate.current}%`,
+                `Sonraki Toplantı: ${formatDate(data.fed_rate.next_meeting)}`,
+                'blue'
+            );
+            calendarGrid.appendChild(fedCard);
 
-        <button id="af-btn" class="btn primary" style="width:100%;margin-top:10px;"></button>
-        <button class="btn secondary" style="width:100%;margin-top:10px;" onclick="closeAuthModal()">İptal</button>
-    </div>
-</div>
+            // Tarım Dışı İstihdam
+            const nfpCard = createCalendarCard(
+                data.nonfarm_payroll.label,
+                data.nonfarm_payroll.value,
+                `Önceki: ${data.nonfarm_payroll.previous}`,
+                'green',
+                formatDate(data.nonfarm_payroll.date)
+            );
+            calendarGrid.appendChild(nfpCard);
 
-<!-- JS -->
-<script src="app.js"></script>
+            // İşsizlik
+            const unemploymentCard = createCalendarCard(
+                data.unemployment.label,
+                data.unemployment.value,
+                `Önceki: ${data.unemployment.previous}`,
+                data.unemployment.value < data.unemployment.previous ? 'green' : 'red',
+                formatDate(data.unemployment.date)
+            );
+            calendarGrid.appendChild(unemploymentCard);
+
+            // Enflasyon
+            const inflationCard = createCalendarCard(
+                data.inflation.label,
+                data.inflation.value,
+                `Önceki: ${data.inflation.previous}`,
+                data.inflation.value < data.inflation.previous ? 'green' : 'red',
+                formatDate(data.inflation.date)
+            );
+            calendarGrid.appendChild(inflationCard);
+
+        } catch (error) {
+            console.error('Takvim hatası:', error);
+        }
+    }
+
+    function createCalendarCard(label, value, meta, badgeColor, date = null) {
+        const card = document.createElement('div');
+        card.className = 'calendar-card';
+        
+        card.innerHTML = `
+            <div class="calendar-label">${label}</div>
+            <div class="calendar-value">${value}</div>
+            <div class="calendar-meta">
+                <span>${meta}</span>
+                ${date ? `<span class="badge badge-${badgeColor}">${date}</span>` : ''}
+            </div>
+        `;
+        
+        return card;
+    }
+
+    function formatNumber(num, decimals = 2) {
+        return Number(num).toLocaleString('tr-TR', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+    }
+
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('tr-TR', { 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric' 
+        });
+    }
+
+    function showError(message) {
+        const errorSection = document.getElementById('errorSection');
+        errorSection.innerHTML = `<div class="error-message">${message}</div>`;
+        errorSection.style.display = 'block';
+        document.getElementById('loadingSection').style.display = 'none';
+    }
+
+    async function loadAllData() {
+        document.getElementById('loadingSection').style.display = 'block';
+        await Promise.all([loadPrices(), loadCalendar()]);
+    }
+
+    // Sayfa yüklendiğinde verileri getir
+    loadAllData();
+
+    // Her 30 saniyede bir otomatik güncelle
+    setInterval(loadAllData, 30000);
+</script>
+```
+
 </body>
 </html>
