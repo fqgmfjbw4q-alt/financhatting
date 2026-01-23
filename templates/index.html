@@ -215,6 +215,50 @@
         /* =========================================
            EKONOMİK TAKVİM: DETAYLI TASARIM
            ========================================= */
+        /* TAKVİM KART DETAYLARI */
+.calendar-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+    gap: 25px; 
+}
+.calendar-card {
+    background: #1e293b; 
+    border: 1px solid #334155; 
+    border-radius: 20px; 
+    padding: 25px;
+    transition: 0.3s; 
+    position: relative; 
+    overflow: hidden;
+}
+.calendar-card:hover { 
+    border-color: #3b82f6; 
+    background: #243146; 
+    transform: translateY(-5px);
+}
+.cal-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 15px; 
+}
+.cal-title { 
+    font-weight: 800; 
+    font-size: 1.1em; 
+    color: #f1f5f9; 
+}
+.cal-info { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-top: 10px; 
+    font-size: 0.9em; 
+}
+.cal-label { color: #94a3b8; }
+.badge { 
+    padding: 4px 12px; 
+    border-radius: 12px; 
+    font-weight: 700; 
+    font-size: 0.85em; 
+}
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -446,18 +490,33 @@
         }
 
         async function loadCalendar() {
-            try {
-                const res = await fetch('/api/calendar');
-                const data = await res.json();
-                const calGrid = document.getElementById('calendarGrid');
-                if(!calGrid) return;
-                
-                calGrid.innerHTML = `
-                    <div class="calendar-card">🇺🇸 <strong>FED Faiz Kararı:</strong> <br><br><span class="badge badge-blue">%${data.fed_rate.current}</span></div>
-                    <div class="calendar-card">🇺🇸 <strong>NFP (İstihdam):</strong> <br><br><span class="badge badge-green">${data.nonfarm_payroll.value}</span></div>
-                    <div class="calendar-card">🇹🇷 <strong>TÜFE (Enflasyon):</strong> <br><br><span class="badge badge-red">%${data.inflation.value}</span></div>
-                `;
-            } catch(e) { console.error("Takvim Hatası:", e); }
+    try {
+        const res = await fetch('/api/calendar');
+        const data = await res.json();
+        const calGrid = document.getElementById('calendarGrid');
+        if(!calGrid) return;
+
+        calGrid.innerHTML = data.map(item => `
+            <div class="calendar-card">
+                <div class="cal-header">
+                    <span class="cal-title">${item.country} ${item.name}</span>
+                    <span class="badge ${item.status}">${item.impact}</span>
+                </div>
+                <div class="cal-info">
+                    <span class="cal-label">Açıklanan:</span> 
+                    <strong style="color: #f1f5f9;">${item.actual}</strong>
+                </div>
+                <div class="cal-info">
+                    <span class="cal-label">Beklenti:</span> 
+                    <strong style="color: #94a3b8;">${item.forecast}</strong>
+                </div>
+                <div style="margin-top: 15px; height: 2px; background: rgba(51, 65, 85, 0.5); width: 100%;"></div>
+            </div>
+        `).join('');
+    } catch(e) {
+        console.error("Takvim yüklenirken hata oluştu:", e);
+    }
+}
         }
 
         updateData();
