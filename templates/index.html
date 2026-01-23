@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% set title = "Finans Takip - Canlı Piyasa Verileri" %}
+
+{% block content %}
+<style>
+  /* Senin orijinal stilin - aynı */
+  header{ text-align:center; padding:22px 0; margin-bottom:24px; border-bottom:2px solid #334155;}
+  header h1{ font-size:2.2em; color:#10b981; margin-bottom:8px; text-shadow:0 0 20px rgba(16,185,129,.3);}
+  header p{ color:#94a3b8; font-size:1.05em;}
+  .last-update{text-align:center;color:#64748b;margin-bottom:16px;font-size:.9em;}
+  .prices-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:40px;}
+  .price-card{background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%);border:1px solid #334155;border-radius:15px;padding:25px;transition:all .3s ease;position:relative;overflow:hidden;}
+  .price-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981,#3b82f6);opacity:0;transition:opacity .3s ease;}
+  .price-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(16,185,129,.2);border-color:#10b981;}
+  .price-card:hover::before{opacity:1;}
+  .price-label{font-size:.9em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+  .price-icon{font-size:1.3em;}
+  .price-value{font-size:2em;color:#10b981;font-weight:bold;margin-bottom:5px;font-variant-numeric:tabular-nums;}
+  .price-unit{font-size:.85em;color:#64748b;}
+
+  #chartModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:10000;backdrop-filter:blur(5px);}
+  .modal-content{background:#1e293b;width:100vw;height:100vh;margin:0;border-radius:0;position:relative;border:1px solid #334155;overflow:hidden;}
+  .close-btn{position:absolute;top:15px;right:20px;background:#ef4444;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;z-index:10001;font-weight:bold;}
+  .loading{text-align:center;padding:50px;color:#64748b;}
+  .spinner{border:3px solid #334155;border-top:3px solid #10b981;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto 20px;}
+  @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+  .calendar-section{margin-top:30px;}
+  .section-title{font-size:2em;color:#10b981;margin-bottom:20px;text-align:center;position:relative;padding-bottom:15px;}
+  .section-title::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:100px;height:3px;background:linear-gradient(90deg,#10b981,#3b82f6);}
+  .calendar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:25px;}
+  .calendar-card{background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%);border:1px solid #334155;border-radius:15px;padding:30px;transition:all .3s ease;}
+  .calendar-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(59,130,246,.2);border-color:#3b82f6;}
+  .calendar-label{font-size:1.1em;color:#94a3b8;margin-bottom:15px;font-weight:600;}
+  .calendar-value{font-size:2.2em;color:#3b82f6;font-weight:bold;margin-bottom:10px;}
+  .calendar-meta{color:#64748b;font-size:.9em;display:flex;justify-content:space-between;margin-top:15px;padding-top:15px;border-top:1px solid #334155;}
+  .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.85em;font-weight:600;}
+  .badge-green{background:rgba(16,185,129,.2);color:#10b981;}
+  .badge-red{background:rgba(239,68,68,.2);color:#ef4444;}
+  .badge-blue{background:rgba(59,130,246,.2);color:#3b82f6;}
+
+  .refresh-btn{position:fixed;bottom:30px;right:30px;background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;border-radius:50%;width:60px;height:60px;font-size:1.5em;cursor:pointer;box-shadow:0 5px 20px rgba(16,185,129,.4);transition:all .3s ease;z-index:99999;}
+  .refresh-btn:hover{transform:scale(1.1) rotate(180deg);box-shadow:0 8px 30px rgba(16,185,129,.6);}
+
+  @media(max-width:768px){
+    header h1{font-size:1.8em;}
+    .prices-grid{grid-template-columns:1fr;}
+    .price-value{font-size:1.6em;}
+    .calendar-grid{grid-template-columns:1fr;}
+  }
+</style>
+
+<header>
+  <h1>📊 Finans Takip Platformu</h1>
+  <p>Gerçek Zamanlı Piyasa Verileri ve Ekonomik Takvim</p>
+</header>
+
+<div class="last-update" id="lastUpdate">Son Güncelleme: Yükleniyor...</div>
+
+<div id="loadingSection" class="loading">
+  <div class="spinner"></div>
+  <p>Veriler yükleniyor...</p>
+</div>
+
+<div id="errorSection" style="display:none;"></div>
+
+<div id="pricesSection" style="display:none;">
+  <div class="prices-grid" id="pricesGrid"></div>
+</div>
+
+<div class="calendar-section">
+  <h2 class="section-title">📅 Ekonomik Takvim</h2>
+  <div class="calendar-grid" id="calendarGrid"></div>
+</div>
+
+<div id="chartModal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeChart()">Kapat X</button>
+    <div id="tv_chart_container" style="height:100%;"></div>
+  </div>
+</div>
+
+<button class="refresh-btn" onclick="loadAllData()" title="Verileri Yenile">↻</button>
+
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<script>
+  const priceConfig = {
+    gram_altin: { label:'Gram Altın', icon:'✨', unit:'TRY', decimals:2, hasChart:false },
+    btc: { label:'Bitcoin', icon:'₿', unit:'USD', decimals:2, tv:"BINANCE:BTCUSDT", hasChart:true, sym:"btc" },
+    gold: { label:'Altın (Ons)', icon:'🥇', unit:'USD', decimals:2, tv:"TVC:GOLD", hasChart:true, sym:"gold" },
+    silver:{ label:'Gümüş (Ons)', icon:'🥈', unit:'USD', decimals:2, tv:"TVC:SILVER", hasChart:true, sym:"silver" },
+    usd_try:{ label:'Dolar / TL', icon:'💵', unit:'TRY', decimals:4, tv:"FX:USDTRY", hasChart:true, sym:"usd_try" },
+    eur_try:{ label:'Euro / TL', icon:'💶', unit:'TRY', decimals:4, tv:"FX:EURTRY", hasChart:true, sym:"eur_try" },
+    bist100:{ label:'BIST 100', icon:'📈', unit:'TRY', decimals:2, hasChart:false }
+  };
+  
+  async function loadPrices(){
+    try{
+      const response = await fetch('/api/prices');
+      if(!response.ok) throw new Error('Fiyatlar yüklenemedi');
+      const data = await response.json();
+
+      const pricesGrid = document.getElementById('pricesGrid');
+      pricesGrid.innerHTML = '';
+      for(const [key, config] of Object.entries(priceConfig)){
+        if(data[key] !== null && data[key] !== undefined){
+          const card = document.createElement('div');
+          card.className = 'price-card';
+
+          if(config.hasChart){
+            card.style.cursor = 'pointer';
+            card.onclick = () => openChart(config.tv);
+          } else if(config.sym){
+            // chart yoksa bile sembol sayfasına gitmek istersen burada açabilirsin
+          }
+
+          // Sembol sayfasına gitmek için sağ altta küçük link ekleyelim (görünümü bozmadan)
+          const symbolLink = config.sym ? `<div style="margin-top:10px;"><a href="/s/${config.sym}" style="color:#3b82f6;font-size:.9em;">Yorumlar →</a></div>` : "";
+
+          card.innerHTML = `
+            <div class="price-label"><span class="price-icon">${config.icon}</span><span>${config.label}</span></div>
+            <div class="price-value">${formatNumber(data[key], config.decimals)}</div>
+            <div class="price-unit">${config.unit} ${config.hasChart ? '• <small style="color:#10b981">Analiz İçin Tıkla</small>' : ''}</div>
+            ${symbolLink}
+          `;
+          pricesGrid.appendChild(card);
+        }
+      }
+
+      const updateTime = new Date(data.timestamp);
+      document.getElementById('lastUpdate').textContent = `Son Güncelleme: ${updateTime.toLocaleString('tr-TR')}`;
+
+      document.getElementById('loadingSection').style.display = 'none';
+      document.getElementById('pricesSection').style.display = 'block';
+      document.getElementById('errorSection').style.display = 'none';
+    }catch(err){
+      showError('Fiyat verileri yüklenirken bir hata oluştu.');
+    }
+  }
+
+  function openChart(symbol){
+    document.getElementById('chartModal').style.display = 'block';
+    document.getElementById('tv_chart_container').innerHTML = '';
+    new TradingView.widget({
+      "autosize": true,
+      "symbol": symbol,
+      "interval": "60",
+      "timezone": "Europe/Istanbul",
+      "theme": "dark",
+      "style": "1",
+      "locale": "tr",
+      "toolbar_bg": "#f1f3f6",
+      "enable_publishing": false,
+      "hide_side_toolbar": false,
+      "allow_symbol_change": true,
+      "container_id": "tv_chart_container",
+      "studies": [
+        "Volume@tv-basicstudies",
+        "PivotPointsHighLow@tv-basicstudies"
+      ]
+    });
+  }
+
+  function closeChart(){
+    document.getElementById('chartModal').style.display = 'none';
+    document.getElementById('tv_chart_container').innerHTML = '';
+  }
+
+  async function loadCalendar(){
+    try{
+      const response = await fetch('/api/calendar');
+      if(!response.ok) throw new Error('Takvim yüklenemedi');
+      const data = await response.json();
+      const calendarGrid = document.getElementById('calendarGrid');
+      calendarGrid.innerHTML = '';
+      calendarGrid.appendChild(createCalendarCard('🇺🇸 FED Faiz Oranı', `${data.fed_rate.current}%`, `Sonraki: ${formatDate(data.fed_rate.next_meeting)}`, 'blue'));
+      calendarGrid.appendChild(createCalendarCard(`🇺🇸 ${data.nonfarm_payroll.label}`, data.nonfarm_payroll.value, `Önceki: ${data.nonfarm_payroll.previous}`, 'green', formatDate(data.nonfarm_payroll.date)));
+      calendarGrid.appendChild(createCalendarCard(`🇺🇸 ${data.unemployment.label}`, data.unemployment.value, `Önceki: ${data.unemployment.previous}`, 'red', formatDate(data.unemployment.date)));
+      calendarGrid.appendChild(createCalendarCard(`🇹🇷 ${data.inflation.label}`, data.inflation.value, `Önceki: ${data.inflation.previous}`, 'red', 'Güncel Veri'));
+    }catch(e){}
+  }
+
+  function createCalendarCard(label, value, meta, badgeColor, date=null){
+    const card = document.createElement('div');
+    card.className = 'calendar-card';
+    card.innerHTML = `
+      <div class="calendar-label">${label}</div>
+      <div class="calendar-value">${value}</div>
+      <div class="calendar-meta">
+        <span>${meta}</span>
+        ${date ? `<span class="badge badge-${badgeColor}">${date}</span>` : ''}
+      </div>
+    `;
+    return card;
+  }
+
+  function formatNumber(num, decimals=2){
+    return Number(num).toLocaleString('tr-TR',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+  }
+
+  function formatDate(dateStr){
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+  }
+
+  function showError(message){
+    const errorSection = document.getElementById('errorSection');
+    errorSection.innerHTML = `<div class="error-message">${message}</div>`;
+    errorSection.style.display = 'block';
+    document.getElementById('loadingSection').style.display = 'none';
+  }
+
+  async function loadAllData(){
+    document.getElementById('loadingSection').style.display = 'block';
+    await Promise.all([loadPrices(), loadCalendar()]);
+  }
+
+  loadAllData();
+  setInterval(loadAllData, 30000);
+</script>
+{% endblock %}
