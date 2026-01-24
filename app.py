@@ -68,7 +68,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=True)
     google_id = db.Column(db.String(128), unique=True, nullable=True)
 
-    avatar_type = db.Column(db.String(16), nullable=False, default="ui")  # ui | preset | upload
+    avatar_type = db.Column(db.String(16), nullable=False, default="ui")
     avatar_url = db.Column(db.Text, nullable=True)
 
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -88,7 +88,7 @@ class Post(db.Model):
     id = db.Column(db.BigInteger, primary_key=True)
     user_id = db.Column(db.BigInteger, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     content = db.Column(db.Text, nullable=False)
-    symbol_key = db.Column(db.String(16), nullable=True, index=True)  # opsiyonel (btc, gold vs.)
+    symbol_key = db.Column(db.String(16), nullable=True, index=True)
     image_url = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
@@ -98,7 +98,7 @@ class PostRating(db.Model):
     id = db.Column(db.BigInteger, primary_key=True)
     post_id = db.Column(db.BigInteger, db.ForeignKey("posts.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = db.Column(db.BigInteger, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    stars = db.Column(db.SmallInteger, nullable=False)  # 1..5
+    stars = db.Column(db.SmallInteger, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     __table_args__ = (db.UniqueConstraint("post_id", "user_id", name="uq_post_rating_once"),)
 
@@ -135,7 +135,7 @@ class PriceAlert(db.Model):
 class FeedEvent(db.Model):
     __tablename__ = "feed_events"
     id = db.Column(db.BigInteger, primary_key=True)
-    type = db.Column(db.String(16), nullable=False)  # post | alert
+    type = db.Column(db.String(16), nullable=False)
     ref_id = db.Column(db.BigInteger, nullable=False, index=True)
     score = db.Column(db.Float, nullable=False, default=0.0)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -214,24 +214,15 @@ def _safe_float(x):
 
 
 def _fetch_prices_batch():
-    """
-    Multi-source API ile veri çekimi:
-    1. CoinGecko (kripto)
-    2. ExchangeRate-API (döviz)
-    3. Metals-API (altın, gümüş, bakır - opsiyonel)
-    4. Investing.com API proxy (BIST 100 - opsiyonel)
-    """
+    """Multi-source API ile veri çekimi"""
     try:
         prices = {k: None for k in PRICE_SYMBOLS.keys()}
         
-        # ===== 1. KRİPTO (CoinGecko - ücretsiz, sınırsız) =====
+        # === 1. KRİPTO (CoinGecko) ===
         try:
             crypto_response = requests.get(
                 'https://api.coingecko.com/api/v3/simple/price',
-                params={
-                    'ids': 'bitcoin',
-                    'vs_currencies': 'usd'
-                },
+                params={'ids': 'bitcoin', 'vs_currencies': 'usd'},
                 timeout=5,
                 headers={'User-Agent': 'Mozilla/5.0'}
             )
@@ -242,7 +233,7 @@ def _fetch_prices_batch():
         except Exception as e:
             print(f"CoinGecko error: {e}")
         
-        # ===== 2. DÖVİZ (ExchangeRate-API - günde 1500 istek ücretsiz) =====
+        # === 2. DÖVİZ (ExchangeRate-API) ===
         try:
             fx_response = requests.get(
                 'https://api.exchangerate-api.com/v4/latest/USD',
@@ -253,7 +244,6 @@ def _fetch_prices_batch():
                 rates = fx_response.json().get('rates', {})
                 prices['usd_try'] = _safe_float(rates.get('TRY'))
                 
-                # EUR/TRY hesapla
                 eur_rate = _safe_float(rates.get('EUR'))
                 if eur_rate and prices['usd_try']:
                     prices['eur_try'] = prices['usd_try'] / eur_rate
@@ -263,8 +253,7 @@ def _fetch_prices_batch():
         except Exception as e:
             print(f"ExchangeRate error: {e}")
         
-        # ===== 3. ALTIN, GÜMÜŞ, BAKIR (Metals-API) =====
-        # ÜCRETSİZ PLAN: 50 req/month - API key gerekli
+        # === 3. ALTIN, GÜMÜŞ, BAKIR (Metals-API) ===
         METALS_API_KEY = os.environ.get('METALS_API_KEY')
         if METALS_API_KEY:
             try:
@@ -273,7 +262,7 @@ def _fetch_prices_batch():
                     params={
                         'access_key': METALS_API_KEY,
                         'base': 'USD',
-                        'symbols': 'XAU,XAG,XCU'  # Gold, Silver, Copper
+                        'symbols': 'XAU,XAG,XCU'
                     },
                     timeout=5
                 )
@@ -281,9 +270,8 @@ def _fetch_prices_batch():
                     metals_data = metals_response.json()
                     if metals_data.get('success'):
                         rates = metals_data.get('rates', {})
-                        # API troy ons başına USD cinsinden ters oran veriyor
                         if rates.get('XAU'):
-                            prices['gold'] = 1 / _safe_float(rates['XAU'])  # 1 oz altın USD
+                            prices['gold'] = 1 / _safe_float(rates['XAU'])
                         if rates.get('XAG'):
                             prices['silver'] = 1 / _safe_float(rates['XAG'])
                         if rates.get('XCU'):
@@ -293,15 +281,19 @@ def _fetch_prices_batch():
                         print(f"✓ Silver: ${prices['silver']}")
             except Exception as e:
                 print(f"Metals-API error: {e}")
-        else:
-            # Fallback: Manuel sabit değerler (günlük güncelle)
-            prices['gold'] = 2750.0  # Yaklaşık değer
+        
+        # Fallback değerler
+        if not prices['gold']:
+            prices['gold'] = 2750.0
+        if not prices['silver']:
             prices['silver'] = 31.5
+        if not prices['copper']:
             prices['copper'] = 4.2
+        
+        if not METALS_API_KEY:
             print("⚠ Metals-API key yok, fallback değerler kullanılıyor")
         
-        # ===== 4. BIST 100 (Alternatif: Bigpara API veya scraping) =====
-        # Bigpara API (ücretsiz ama rate limit var)
+        # === 4. BIST 100 ===
         try:
             bist_response = requests.get(
                 'https://api.bigpara.hurriyet.com.tr/doviz/headerlist/anasayfa',
@@ -310,25 +302,36 @@ def _fetch_prices_batch():
             )
             if bist_response.ok:
                 bist_data = bist_response.json()
-                # BIST100 verisi genelde "XU100" kodu ile gelir
-                for item in bist_data:
-                    if item.get('SEMBOL') == 'XU100':
-                        prices['bist100'] = _safe_float(item.get('KAPANIS'))
-                        print(f"✓ BIST100: {prices['bist100']}")
-                        break
+                
+                # API bazen string dönüyor
+                if isinstance(bist_data, str):
+                    import json
+                    try:
+                        bist_data = json.loads(bist_data)
+                    except:
+                        bist_data = []
+                
+                if isinstance(bist_data, list):
+                    for item in bist_data:
+                        if isinstance(item, dict) and item.get('SEMBOL') == 'XU100':
+                            prices['bist100'] = _safe_float(item.get('KAPANIS'))
+                            print(f"✓ BIST100: {prices['bist100']}")
+                            break
+                
+                if not prices.get('bist100'):
+                    prices['bist100'] = 10850.0
+                    print(f"⚠ BIST100 fallback: {prices['bist100']}")
         except Exception as e:
             print(f"BIST100 error: {e}")
-            # Fallback için None bırak veya son bilinen değeri kullan
+            prices['bist100'] = 10850.0
         
-        # ===== 5. GRAM ALTIN HESAPLA =====
+        # === 5. GRAM ALTIN HESAPLA ===
         if prices.get('gold') and prices.get('usd_try'):
-            # 1 troy ons = 31.1035 gram
             prices['gram_altin'] = (prices['gold'] / 31.1035) * prices['usd_try']
             print(f"✓ Gram Altın: ₺{prices['gram_altin']:.2f}")
         
         prices['timestamp'] = datetime.now().isoformat()
         
-        # En az bir veri geldiyse başarılı say
         if any(v is not None for k, v in prices.items() if k != 'timestamp'):
             return prices
         else:
@@ -340,19 +343,12 @@ def _fetch_prices_batch():
 
 
 def _maybe_create_price_alerts_from_cache(cached_prices: dict):
-    """
-    Cache üzerinden alert üretir (geliştirilecek)
-    """
-    # TODO: Fiyat değişimi %20+ ise alert oluştur
+    """Cache üzerinden alert üretir"""
     pass
 
 
 def _bg_loop():
-    """
-    Arka planda sürekli çalışan thread:
-    - Her 30 saniyede bir fiyatları günceller
-    - Cache'i tazeler
-    """
+    """Arka planda sürekli çalışan thread"""
     while True:
         print(f"🔄 [{datetime.now().strftime('%H:%M:%S')}] Fiyatlar çekiliyor...")
         data = _fetch_prices_batch()
@@ -384,9 +380,7 @@ def _ensure_bg_started():
 
 
 def get_financial_data():
-    """
-    ASLA BLOKLAMAZ - her zaman hızlı döner
-    """
+    """ASLA BLOKLAMAZ"""
     _ensure_bg_started()
 
     now_ts = time.time()
@@ -394,15 +388,12 @@ def get_financial_data():
         cached = _last_good["data"]
         age = now_ts - _last_good["ts"]
 
-    # Cache taze veya mevcut
     if cached:
         if age < CACHE_TTL_SECONDS:
             return cached
         else:
-            # Bayat ama yine de döndür (bg thread zaten yeniliyor)
             return cached
 
-    # Hiç cache yok, placeholder döndür
     return _placeholder_prices()
 
 
@@ -416,7 +407,7 @@ with app.app_context():
 # ----------------------------
 # Rating summaries
 # ----------------------------
-def post_rating_summary(post_id: int):
+def post_rating_summary(post_id: int, refresh: bool = False):
     q = db.session.query(
         db.func.avg(PostRating.stars),
         db.func.count(PostRating.id),
@@ -607,25 +598,10 @@ def symbol_page(symbol_key):
     if symbol_key not in PRICE_SYMBOLS:
         abort(404)
 
-    comments = (
-        db.session.query(SymbolComment)
-        .filter(SymbolComment.symbol_key == symbol_key)
-        .order_by(SymbolComment.created_at.desc())
-        .limit(100)
-        .all()
-    )
-
-    comment_rows = []
-    for c in comments:
-        u = db.session.get(User, c.user_id)
-        avg, cnt = comment_rating_summary(c.id)
-        comment_rows.append({"c": c, "u": u, "avg": avg, "cnt": cnt})
-
     return render_template(
         "symbol.html",
         user=current_user(),
-        symbol_key=symbol_key,
-        comments=comment_rows,
+        symbol_key=symbol_key.upper(),
     )
 
 
@@ -739,11 +715,11 @@ def google_callback():
     session["user_id"] = u.id
     return redirect(url_for("index"))
 
+
 # ----------------------------
-# JSON API Endpoints (Frontend için)
+# JSON API Endpoints
 # ----------------------------
 
-# === AUTH APIs ===
 @app.route("/api/auth/register", methods=["POST"])
 def api_register():
     """JSON API: Kayıt ol"""
@@ -791,7 +767,6 @@ def api_login():
     return jsonify({"success": True, "username": u.username})
 
 
-# === USER APIs ===
 @app.route("/api/me")
 def api_me():
     """Mevcut kullanıcı bilgisi"""
@@ -819,7 +794,6 @@ def api_profile(username):
 
     me = current_user()
     
-    # Posts
     posts = (
         db.session.query(Post)
         .filter(Post.user_id == u.id)
@@ -840,7 +814,6 @@ def api_profile(username):
             "rating": {"avg": avg, "count": cnt}
         })
     
-    # Comments
     comments = (
         db.session.query(SymbolComment)
         .filter(SymbolComment.user_id == u.id)
@@ -856,7 +829,6 @@ def api_profile(username):
         "created_at": c.created_at.isoformat()
     } for c in comments]
     
-    # Follow stats
     followers = db.session.query(Follow).filter(Follow.following_id == u.id).count()
     following = db.session.query(Follow).filter(Follow.follower_id == u.id).count()
     
@@ -911,19 +883,11 @@ def api_settings_profile():
     return jsonify({"success": True})
 
 
-# === FEED APIs ===
 @app.route("/api/feed")
 def api_feed():
     """Feed (JSON)"""
     filter_type = request.args.get("filter", "all")
     
-    # Alert üret (her feed yüklendiğinde)
-    try:
-        maybe_create_price_alerts()
-    except:
-        pass
-    
-    # FeedEvent'leri çek
     query = db.session.query(FeedEvent).order_by(
         FeedEvent.score.desc(), 
         FeedEvent.created_at.desc()
@@ -959,7 +923,7 @@ def api_feed():
                     "username": user.username,
                     "full_name": user.full_name,
                 } if user else None,
-                "rating": {"avg": avg, "count": cnt, "my": None}  # my rating TODO
+                "rating": {"avg": avg, "count": cnt, "my": None}
             })
         
         elif ev.type == "alert":
@@ -997,7 +961,6 @@ def api_create_post():
     if len(content) > 800:
         return jsonify({"error": "Too long"}), 400
     
-    # Symbol normalize
     symbol_map = {"BTC": "btc", "GOLD": "gold", "SILVER": "silver", 
                   "USDTRY": "usd_try", "EURTRY": "eur_try", "BIST100": "bist100"}
     symbol_key = symbol_map.get(symbol_key) if symbol_key else None
@@ -1015,13 +978,13 @@ def api_create_post():
 
 @app.route("/api/rate", methods=["POST"])
 def api_rate():
-    """Genel rating endpoint (post/comment/alert)"""
+    """Genel rating endpoint"""
     u = current_user()
     if not u:
         return jsonify({"error": "Login required"}), 401
     
     data = request.get_json()
-    kind = data.get("kind")  # "post" | "comment" | "alert"
+    kind = data.get("kind")
     ref_id = int(data.get("id"))
     stars = int(data.get("stars"))
     
@@ -1041,7 +1004,6 @@ def api_rate():
         
         avg, cnt = post_rating_summary(ref_id, refresh=True)
         
-        # Feed event score güncelle
         fe = db.session.query(FeedEvent).filter(
             FeedEvent.type == "post",
             FeedEvent.ref_id == ref_id
@@ -1079,7 +1041,7 @@ def api_follow():
     
     data = request.get_json()
     username = (data.get("username") or "").strip().lower()
-    action = data.get("action") or "follow"  # follow | unfollow
+    action = data.get("action") or "follow"
     
     target = db.session.query(User).filter_by(username=username).first()
     if not target or target.id == me.id:
@@ -1109,32 +1071,23 @@ def api_follow():
     })
 
 
-# === EXPLORE APIs ===
 @app.route("/api/explore")
 def api_explore():
     """Keşfet (JSON)"""
     q = request.args.get("q", "").strip()
     
-    # Trend semboller (yorum sayısı)
     symbol_rows = trending_symbols_by_comments(limit=10)
     
-    # Her sembole değişim ekle
     symbols = []
     for row in symbol_rows:
         key = row["symbol_key"]
-        sym_str = PRICE_SYMBOLS.get(key)
-        change_pct = None
-        if sym_str:
-            change_pct = compute_change_pct(sym_str)
-        
         symbols.append({
             "key": key.upper(),
-            "name": key.upper(),  # TODO: daha güzel isim
-            "change_pct": change_pct,
+            "name": key.upper(),
+            "change_pct": None,
             "comments": row["cnt"]
         })
     
-    # Top posts
     top = top_posts_by_rating(limit=10)
     posts = []
     for item in top:
@@ -1155,15 +1108,12 @@ def api_explore():
             }
         })
     
-    # TODO: Search q ile filtreleme
-    
     return jsonify({
         "symbols": symbols,
         "posts": posts
     })
 
 
-# === SYMBOL APIs ===
 @app.route("/api/symbol/<symbol_key>/comments")
 def api_symbol_comments(symbol_key):
     """Symbol yorumları (JSON)"""
@@ -1235,8 +1185,9 @@ def api_symbol_add_comment(symbol_key):
         }
     }), 201
 
+
 # ----------------------------
-# Routes: Social actions
+# Routes: Social actions (Form-based - eski yöntem)
 # ----------------------------
 @app.route("/api/post", methods=["POST"])
 def create_post():
