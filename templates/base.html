@@ -3,158 +3,250 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title or "Finans Takip Platformu" }}</title>
+  <title>{% block title %}Finans Takip Platformu{% endblock %}</title>
   <style>
-  :root {
-  --green: #10b981;
-  --blue: #3b82f6;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
-  --muted2: #64748b;
-  --panel: #1e293b;
-  --panel2: #0f172a;
-  --border: #334155;
-}
-/* Mobil responsive - mevcut CSS'in SONUNA ekle */
-@media (max-width: 768px) {
-  /* Sidebar mobilde gizle */
-  .sidebar { 
-    display: none; 
-  }
-  
-  /* Main genişlik doldursun */
-  .main { 
-    padding: 10px; 
-    max-width: 100%; 
-  }
-  
-  /* Ticker daha küçük */
-  .ticker { 
-    gap: 8px; 
-    padding: 8px; 
-  }
-  
-  .tick { 
-    min-width: 140px; 
-    padding: 6px 8px; 
-  }
-  
-  .tick .k { 
-    font-size: 0.75em; 
-  }
-  
-  .tick .v { 
-    font-size: 0.9em; 
-  }
-  
-  /* Butonlar daha büyük (dokunma alanı) */
-  .btn { 
-    padding: 12px 16px; 
-    font-size: 1em; 
-  }
-  
-  /* Input alanları daha rahat */
-  input, textarea { 
-    font-size: 16px; /* iOS zoom önler */
-    padding: 14px; 
-  }
-}
-
-/* Çok küçük ekranlar (iPhone SE gibi) */
-@media (max-width: 375px) {
-  .tick { 
-    min-width: 120px; 
-  }
-  
-  .page-title { 
-    font-size: 1.6em; 
-  }
-}
-
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{
-      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
-      background: linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
-      color:#e2e8f0; min-height:100vh;
+    :root {
+      --green: #10b981;
+      --blue: #3b82f6;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --muted2: #64748b;
+      --panel: #1e293b;
+      --panel2: #0f172a;
+      --border: #334155;
     }
-    a{color:inherit;text-decoration:none}
-    .layout{display:flex; min-height:100vh}
-    .sidebar{
-      width:240px; background:rgba(15,23,42,0.8);
-      border-right:1px solid #334155;
-      padding:18px 14px; position:sticky; top:0; height:100vh;
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
     }
-    .brand{font-weight:800; font-size:1.05em; color:#10b981; margin-bottom:14px}
-    .nav a{
-      display:flex; gap:10px;
-      align-items:center;
-      padding:10px 12px; border-radius:10px; color:#cbd5e1;
-      margin-bottom:8px; border:1px solid transparent;
+    
+    a { color: inherit; text-decoration: none; }
+    
+    .layout { display: flex; min-height: 100vh; }
+    
+    .sidebar {
+      width: 240px;
+      background: rgba(15, 23, 42, 0.8);
+      border-right: 1px solid #334155;
+      padding: 18px 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
     }
-    .nav a:hover{border-color:#10b981; background:rgba(16,185,129,0.08)}
-    .nav small{color:#64748b}
-    .authbox{margin-top:14px; padding-top:14px; border-top:1px solid #334155}
-    .btn{
-      display:inline-block; padding:10px 12px; border-radius:10px;
-      border:1px solid #334155; background:rgba(30,41,59,0.6);
-      color:#e2e8f0; cursor:pointer;
+    
+    .brand {
+      font-weight: 800;
+      font-size: 1.05em;
+      color: #10b981;
+      margin-bottom: 14px;
     }
-    .btn:hover{border-color:#10b981}
-    .btn-green{border-color:#10b981; background:rgba(16,185,129,0.12)}
-    .main{flex:1; padding:18px; max-width:1400px; margin:0 auto}
-    .ticker{
-      position:sticky; top:0; z-index:9999;
-      background:rgba(15,23,42,0.85);
-      border:1px solid #334155;
-      border-radius:14px;
-      padding:10px 12px;
-      margin-bottom:18px;
+    
+    .nav a {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    
+    .nav a:hover {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+    }
+    
+    .nav small { color: #64748b; }
+    
+    .authbox {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #334155;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: rgba(30, 41, 59, 0.6);
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .btn:hover {
+      border-color: #10b981;
+      transform: translateY(-1px);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: #10b981;
+      color: white;
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      border-color: rgba(148, 163, 184, 0.3);
+    }
+    
+    .btn-green {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+    }
+    
+    .main {
+      flex: 1;
+      padding: 18px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .ticker {
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 18px;
       backdrop-filter: blur(8px);
-      display:flex; gap:14px; overflow:auto;
+      display: flex;
+      gap: 14px;
+      overflow: auto;
     }
-    .tick{
-      min-width:180px;
-      border:1px solid #334155;
-      border-radius:12px;
-      padding:8px 10px;
-      background:rgba(30,41,59,0.5);
+    
+    .tick {
+      min-width: 180px;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 8px 10px;
+      background: rgba(30, 41, 59, 0.5);
     }
-    .tick .k{color:#94a3b8;font-size:.82em;text-transform:uppercase;letter-spacing:1px}
-    .tick .v{color:#10b981;font-weight:800;font-variant-numeric:tabular-nums;margin-top:4px}
-    .tick small{color:#64748b}
-    .flash{margin:10px 0}
-    .flash .ok{border:1px solid #10b981;background:rgba(16,185,129,0.10);color:#a7f3d0;padding:10px;border-radius:10px}
-    .flash .err{border:1px solid #ef4444;background:rgba(239,68,68,0.10);color:#fecaca;padding:10px;border-radius:10px}
-
-    .error-message{
-      background: rgba(239,68,68,0.1);
-      border:1px solid #ef4444;
-      color:#fca5a5;
-      padding:15px;
-      border-radius:10px;
-      text-align:center;
-      margin:20px 0;
+    
+    .tick .k {
+      color: #94a3b8;
+      font-size: 0.82em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
-
-    @media (max-width: 900px){
-      .sidebar{display:none}
-      .main{padding:12px}
-      .tick{min-width:160px}
+    
+    .tick .v {
+      color: #10b981;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      margin-top: 4px;
+    }
+    
+    .tick small { color: #64748b; }
+    
+    .flash { margin: 10px 0; }
+    
+    .flash .ok {
+      border: 1px solid #10b981;
+      background: rgba(16, 185, 129, 0.10);
+      color: #a7f3d0;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    
+    .flash .err {
+      border: 1px solid #ef4444;
+      background: rgba(239, 68, 68, 0.10);
+      color: #fecaca;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    /* Mobil Responsive */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      
+      .main {
+        padding: 10px;
+        max-width: 100%;
+      }
+      
+      .ticker {
+        gap: 8px;
+        padding: 8px;
+      }
+      
+      .tick {
+        min-width: 140px;
+        padding: 6px 8px;
+      }
+      
+      .tick .k { font-size: 0.75em; }
+      .tick .v { font-size: 0.9em; }
+      
+      .btn {
+        padding: 12px 16px;
+        font-size: 1em;
+      }
+      
+      input, textarea {
+        font-size: 16px;
+        padding: 14px;
+      }
+    }
+    
+    @media (max-width: 375px) {
+      .tick { min-width: 120px; }
+      .page-title { font-size: 1.6em; }
     }
   </style>
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
   <div class="layout">
     <aside class="sidebar">
       <div class="brand">📊 Financhatting</div>
       <div class="nav">
-        <a href="/"><span>🏠</span> <span>Ana Sayfa<br><small>Finans takip</small></span></a>
-        <a href="/feed"><span>🧵</span> <span>Feed<br><small>Akış + alert</small></span></a>
-        <a href="/explore"><span>🧭</span> <span>Keşfet<br><small>Trendler</small></span></a>
-    
+        <a href="/">
+          <span>🏠</span>
+          <span>Ana Sayfa<br><small>Finans takip</small></span>
+        </a>
+        <a href="/feed">
+          <span>🧵</span>
+          <span>Feed<br><small>Akış + alert</small></span>
+        </a>
+        <a href="/explore">
+          <span>🧭</span>
+          <span>Keşfet<br><small>Trendler</small></span>
+        </a>
         {% if user %}
-          <a href="/@{{ user.username }}"><span>👤</span> <span>Profil<br><small>@{{ user.username }}</small></span></a>
-          <a href="/settings/profile"><span>⚙️</span> <span>Ayarlar<br><small>Profil düzenle</small></span></a>
+          <a href="/@{{ user.username }}">
+            <span>👤</span>
+            <span>Profil<br><small>@{{ user.username }}</small></span>
+          </a>
+          <a href="/settings/profile">
+            <span>⚙️</span>
+            <span>Ayarlar<br><small>Profil düzenle</small></span>
+          </a>
         {% endif %}
       </div>
 
@@ -163,24 +255,28 @@
           <div style="color:#94a3b8;font-size:.9em;margin-bottom:10px;">
             Giriş: <b style="color:#e2e8f0;">@{{ user.username }}</b>
           </div>
-          <a class="btn" href="/auth/logout">Çıkış</a>
+          <a class="btn" href="/logout">Çıkış</a>
         {% else %}
-          <a class="btn btn-green" href="/auth/login">Giriş</a>
-          <a class="btn" href="/auth/register" style="margin-top:8px;">Kayıt</a>
+          <a class="btn btn-green" href="/login">Giriş</a>
+          <a class="btn" href="/register" style="margin-top:8px;">Kayıt</a>
         {% endif %}
       </div>
     </aside>
 
     <main class="main">
       <div class="ticker" id="miniTicker">
-        <div class="tick"><div class="k">Yükleniyor</div><div class="v">...</div><small>Mini ticker</small></div>
+        <div class="tick">
+          <div class="k">Yükleniyor</div>
+          <div class="v">...</div>
+          <small>Mini ticker</small>
+        </div>
       </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           <div class="flash">
-            {% for cat,msg in messages %}
-              <div class="{{ 'ok' if cat=='ok' else 'err' }}">{{ msg }}</div>
+            {% for cat, msg in messages %}
+              <div class="{{ 'ok' if cat == 'ok' else 'err' }}">{{ msg }}</div>
             {% endfor %}
           </div>
         {% endif %}
@@ -190,123 +286,131 @@
     </main>
   </div>
 
+  <!-- Mobil Bottom Navigation -->
+  <nav class="mobile-nav">
+    <a href="/" class="nav-item">
+      <span>🏠</span>
+      <small>Ana Sayfa</small>
+    </a>
+    <a href="/feed" class="nav-item">
+      <span>🧵</span>
+      <small>Feed</small>
+    </a>
+    <a href="/explore" class="nav-item">
+      <span>🧭</span>
+      <small>Keşfet</small>
+    </a>
+    {% if user %}
+    <a href="/@{{ user.username }}" class="nav-item">
+      <span>👤</span>
+      <small>Profil</small>
+    </a>
+    {% else %}
+    <a href="/login" class="nav-item">
+      <span>🔐</span>
+      <small>Giriş</small>
+    </a>
+    {% endif %}
+  </nav>
+
+  <style>
+    /* Mobil bottom navigation */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid #334155;
+      padding: 8px 0;
+      z-index: 9999;
+    }
+    
+    @media (max-width: 768px) {
+      .mobile-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+      
+      .main {
+        padding-bottom: 80px !important;
+      }
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #94a3b8;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+    }
+    
+    .nav-item:active {
+      background: rgba(16, 185, 129, 0.1);
+      transform: scale(0.95);
+    }
+    
+    .nav-item span {
+      font-size: 1.4em;
+    }
+    
+    .nav-item small {
+      font-size: 0.75em;
+      font-weight: 600;
+    }
+  </style>
+
   <script>
     const miniMap = [
-      ["Gram Altın","gram_altin","TRY",2],
-      ["Bitcoin","btc","USD",2],
-      ["Altın Ons","gold","USD",2],
-      ["Gümüş Ons","silver","USD",2],
-      ["USD/TRY","usd_try","TRY",4],
-      ["EUR/TRY","eur_try","TRY",4],
-      ["BIST100","bist100","TRY",2],
+      ["Gram Altın", "gram_altin", "TRY", 2],
+      ["Bitcoin", "btc", "USD", 2],
+      ["Altın Ons", "gold", "USD", 2],
+      ["Gümüş Ons", "silver", "USD", 2],
+      ["USD/TRY", "usd_try", "TRY", 4],
+      ["EUR/TRY", "eur_try", "TRY", 4],
+      ["BIST100", "bist100", "TRY", 2],
     ];
-    function fmt(n, d){ 
-      if(n===null || n===undefined) return "—";
-      return Number(n).toLocaleString("tr-TR",{minimumFractionDigits:d,maximumFractionDigits:d});
+
+    function fmt(n, d) {
+      if (n === null || n === undefined) return "—";
+      return Number(n).toLocaleString("tr-TR", {
+        minimumFractionDigits: d,
+        maximumFractionDigits: d,
+      });
     }
 
-    async function loadMiniTicker(){
-      try{
+    async function loadMiniTicker() {
+      try {
         const r = await fetch("/api/prices");
         const data = await r.json();
         const el = document.getElementById("miniTicker");
         el.innerHTML = "";
-        miniMap.forEach(([label,key,unit,dec])=>{
+        miniMap.forEach(([label, key, unit, dec]) => {
           const div = document.createElement("div");
-          div.className="tick";
-          div.innerHTML = `<div class="k">${label}</div>
-                           <div class="v">${fmt(data[key],dec)}</div>
-                           <small>${unit}</small>`;
+          div.className = "tick";
+          div.innerHTML = `
+            <div class="k">${label}</div>
+            <div class="v">${fmt(data[key], dec)}</div>
+            <small>${unit}</small>
+          `;
           el.appendChild(div);
         });
-      }catch(e){
-        // sessiz geç
+      } catch (e) {
+        console.error("Ticker error:", e);
       }
     }
+    
     loadMiniTicker();
     setInterval(loadMiniTicker, 30000);
   </script>
-  <!-- Mobil bottom nav -->
-<nav class="mobile-nav">
-  <a href="/" class="nav-item">
-    <span>🏠</span>
-    <small>Ana Sayfa</small>
-  </a>
-  <a href="/feed" class="nav-item">
-    <span>🧵</span>
-    <small>Feed</small>
-  </a>
-  <a href="/explore" class="nav-item">
-    <span>🧭</span>
-    <small>Keşfet</small>
-  </a>
-  {% if user %}
-  <a href="/@{{ user.username }}" class="nav-item">
-    <span>👤</span>
-    <small>Profil</small>
-  </a>
-  {% else %}
-  <a href="/auth/login" class="nav-item">
-    <span>🔐</span>
-    <small>Giriş</small>
-  </a>
-  {% endif %}
-</nav>
-
-<style>
-  /* Mobil bottom navigation */
-  .mobile-nav {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid #334155;
-    padding: 8px 0;
-    z-index: 9999;
-  }
   
-  @media (max-width: 768px) {
-    .mobile-nav {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-    }
-    
-    /* Ana içeriğe padding ekle (bottom nav için yer aç) */
-    .main {
-      padding-bottom: 80px !important;
-    }
-  }
-  
-  .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    color: #94a3b8;
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 12px;
-    transition: all 0.2s ease;
-  }
-  
-  .nav-item:active {
-    background: rgba(16, 185, 129, 0.1);
-    transform: scale(0.95);
-  }
-  
-  .nav-item span {
-    font-size: 1.4em;
-  }
-  
-  .nav-item small {
-    font-size: 0.75em;
-    font-weight: 600;
-  }
-</style>
-
+  {% block extra_js %}{% endblock %}
 </body>
 </html>
