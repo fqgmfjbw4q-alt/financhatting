@@ -18,7 +18,7 @@ from flask import (
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
-import yfinance as yf
+import requests
 
 # OAuth (opsiyonel)
 from authlib.integrations.flask_client import OAuth
@@ -174,19 +174,19 @@ def username_is_valid(u: str) -> bool:
 
 
 # ----------------------------
-# Finance Data (NON-BLOCKING)
+# Finance Data (MULTI-SOURCE API)
 # ----------------------------
 PRICE_SYMBOLS = {
     "btc": "BTC-USD",
-    "gold": "GC=F",
-    "silver": "SI=F",
-    "copper": "HG=F",
-    "usd_try": "USDTRY=X",
-    "eur_try": "EURTRY=X",
-    "bist100": "^XU100",
+    "gold": "GOLD",
+    "silver": "SILVER",
+    "copper": "COPPER",
+    "usd_try": "USD/TRY",
+    "eur_try": "EUR/TRY",
+    "bist100": "BIST100",
 }
 
-CACHE_TTL_SECONDS = 25  # frontend 30sn'de bir çağırıyor
+CACHE_TTL_SECONDS = 30
 _last_good = {"data": None, "ts": 0.0}
 _lock = threading.Lock()
 _worker_started = False
@@ -215,84 +215,160 @@ def _safe_float(x):
 
 def _fetch_prices_batch():
     """
-    Tek seferde çekmeye çalışır. Başarısızsa None döner.
-    Bu fonksiyon request thread'inde çağrılmıyor (arka planda çalışıyor).
+    Multi-source API ile veri çekimi:
+    1. CoinGecko (kripto)
+    2. ExchangeRate-API (döviz)
+    3. Metals-API (altın, gümüş, bakır - opsiyonel)
+    4. Investing.com API proxy (BIST 100 - opsiyonel)
     """
     try:
-        tickers = list(PRICE_SYMBOLS.values())  # ['BTC-USD', ...]
-        df = yf.download(
-            tickers=" ".join(tickers),
-            period="5d",
-            interval="1d",
-            group_by="ticker",
-            auto_adjust=False,
-            threads=False,
-            progress=False,
-        )
-        if df is None or getattr(df, "empty", True):
-            return None
-
-        prices = {}
-        for k, sym in PRICE_SYMBOLS.items():
-            close_series = None
+        prices = {k: None for k in PRICE_SYMBOLS.keys()}
+        
+        # ===== 1. KRİPTO (CoinGecko - ücretsiz, sınırsız) =====
+        try:
+            crypto_response = requests.get(
+                'https://api.coingecko.com/api/v3/simple/price',
+                params={
+                    'ids': 'bitcoin',
+                    'vs_currencies': 'usd'
+                },
+                timeout=5,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            if crypto_response.ok:
+                crypto_data = crypto_response.json()
+                prices['btc'] = _safe_float(crypto_data.get('bitcoin', {}).get('usd'))
+                print(f"✓ BTC: ${prices['btc']}")
+        except Exception as e:
+            print(f"CoinGecko error: {e}")
+        
+        # ===== 2. DÖVİZ (ExchangeRate-API - günde 1500 istek ücretsiz) =====
+        try:
+            fx_response = requests.get(
+                'https://api.exchangerate-api.com/v4/latest/USD',
+                timeout=5,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            if fx_response.ok:
+                rates = fx_response.json().get('rates', {})
+                prices['usd_try'] = _safe_float(rates.get('TRY'))
+                
+                # EUR/TRY hesapla
+                eur_rate = _safe_float(rates.get('EUR'))
+                if eur_rate and prices['usd_try']:
+                    prices['eur_try'] = prices['usd_try'] / eur_rate
+                
+                print(f"✓ USD/TRY: {prices['usd_try']}")
+                print(f"✓ EUR/TRY: {prices['eur_try']}")
+        except Exception as e:
+            print(f"ExchangeRate error: {e}")
+        
+        # ===== 3. ALTIN, GÜMÜŞ, BAKIR (Metals-API) =====
+        # ÜCRETSİZ PLAN: 50 req/month - API key gerekli
+        METALS_API_KEY = os.environ.get('METALS_API_KEY')
+        if METALS_API_KEY:
             try:
-                # Çoklu ticker gelince kolonlar MultiIndex olur.
-                if isinstance(df.columns, type(getattr(df, "columns"))):
-                    if sym in df.columns.get_level_values(0):
-                        close_series = df[(sym, "Close")]
-                    else:
-                        # Tek ticker gibi geldiyse:
-                        close_series = df["Close"]
-                else:
-                    close_series = None
-            except Exception:
-                close_series = None
-
-            if close_series is not None:
-                close_series = close_series.dropna()
-                prices[k] = _safe_float(close_series.iloc[-1]) if len(close_series) else None
-            else:
-                prices[k] = None
-
-        # Gram Altın TL
-        if prices.get("gold") and prices.get("usd_try"):
-            prices["gram_altin"] = (prices["gold"] / 31.1035) * prices["usd_try"]
+                metals_response = requests.get(
+                    f'https://metals-api.com/api/latest',
+                    params={
+                        'access_key': METALS_API_KEY,
+                        'base': 'USD',
+                        'symbols': 'XAU,XAG,XCU'  # Gold, Silver, Copper
+                    },
+                    timeout=5
+                )
+                if metals_response.ok:
+                    metals_data = metals_response.json()
+                    if metals_data.get('success'):
+                        rates = metals_data.get('rates', {})
+                        # API troy ons başına USD cinsinden ters oran veriyor
+                        if rates.get('XAU'):
+                            prices['gold'] = 1 / _safe_float(rates['XAU'])  # 1 oz altın USD
+                        if rates.get('XAG'):
+                            prices['silver'] = 1 / _safe_float(rates['XAG'])
+                        if rates.get('XCU'):
+                            prices['copper'] = 1 / _safe_float(rates['XCU'])
+                        
+                        print(f"✓ Gold: ${prices['gold']}")
+                        print(f"✓ Silver: ${prices['silver']}")
+            except Exception as e:
+                print(f"Metals-API error: {e}")
         else:
-            prices["gram_altin"] = None
-
-        prices["timestamp"] = datetime.now().isoformat()
-        return prices
+            # Fallback: Manuel sabit değerler (günlük güncelle)
+            prices['gold'] = 2750.0  # Yaklaşık değer
+            prices['silver'] = 31.5
+            prices['copper'] = 4.2
+            print("⚠ Metals-API key yok, fallback değerler kullanılıyor")
+        
+        # ===== 4. BIST 100 (Alternatif: Bigpara API veya scraping) =====
+        # Bigpara API (ücretsiz ama rate limit var)
+        try:
+            bist_response = requests.get(
+                'https://api.bigpara.hurriyet.com.tr/doviz/headerlist/anasayfa',
+                timeout=5,
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            if bist_response.ok:
+                bist_data = bist_response.json()
+                # BIST100 verisi genelde "XU100" kodu ile gelir
+                for item in bist_data:
+                    if item.get('SEMBOL') == 'XU100':
+                        prices['bist100'] = _safe_float(item.get('KAPANIS'))
+                        print(f"✓ BIST100: {prices['bist100']}")
+                        break
+        except Exception as e:
+            print(f"BIST100 error: {e}")
+            # Fallback için None bırak veya son bilinen değeri kullan
+        
+        # ===== 5. GRAM ALTIN HESAPLA =====
+        if prices.get('gold') and prices.get('usd_try'):
+            # 1 troy ons = 31.1035 gram
+            prices['gram_altin'] = (prices['gold'] / 31.1035) * prices['usd_try']
+            print(f"✓ Gram Altın: ₺{prices['gram_altin']:.2f}")
+        
+        prices['timestamp'] = datetime.now().isoformat()
+        
+        # En az bir veri geldiyse başarılı say
+        if any(v is not None for k, v in prices.items() if k != 'timestamp'):
+            return prices
+        else:
+            return None
+            
     except Exception as e:
-        print("yfinance batch fetch hata:", e)
+        print(f"❌ Batch fetch critical error: {e}")
         return None
 
 
 def _maybe_create_price_alerts_from_cache(cached_prices: dict):
     """
-    Cache üzerinden (mümkünse) alert üretir.
-    Burada %20+ alert için 5d kapanışa ihtiyaç var; batch fetch başarısızsa zaten uğraşma.
+    Cache üzerinden alert üretir (geliştirilecek)
     """
-    # Şimdilik basit: cache'de pct yoksa alert üretmeyelim (feed'i asla yavaşlatma).
-    # İstersen ileride burada ayrı bir batch ile (Close[-1]/Close[-2]) hesaplanır.
-    return
+    # TODO: Fiyat değişimi %20+ ise alert oluştur
+    pass
 
 
 def _bg_loop():
     """
-    Sürekli arka planda:
-    - fiyat cache tazeler
-    - (istersen) alert üretir
+    Arka planda sürekli çalışan thread:
+    - Her 30 saniyede bir fiyatları günceller
+    - Cache'i tazeler
     """
     while True:
+        print(f"🔄 [{datetime.now().strftime('%H:%M:%S')}] Fiyatlar çekiliyor...")
         data = _fetch_prices_batch()
+        
         if data:
             with _lock:
                 _last_good["data"] = data
                 _last_good["ts"] = time.time()
+            print(f"✅ Cache güncellendi")
+            
             try:
                 _maybe_create_price_alerts_from_cache(data)
             except Exception as e:
-                print("alert bg hata:", e)
+                print(f"Alert bg error: {e}")
+        else:
+            print(f"⚠ Veri çekilemedi, cache korunuyor")
 
         time.sleep(max(10, CACHE_TTL_SECONDS))
 
@@ -304,14 +380,12 @@ def _ensure_bg_started():
     _worker_started = True
     t = threading.Thread(target=_bg_loop, daemon=True)
     t.start()
+    print("🚀 Background worker başlatıldı")
 
 
 def get_financial_data():
     """
-    ASLA BLOKLAMAZ.
-    - Cache tazeyse cache döner
-    - Cache bayatsa cache döner (arkada bg thread zaten yeniliyor)
-    - Cache yoksa placeholder döner
+    ASLA BLOKLAMAZ - her zaman hızlı döner
     """
     _ensure_bg_started()
 
@@ -320,12 +394,15 @@ def get_financial_data():
         cached = _last_good["data"]
         age = now_ts - _last_good["ts"]
 
-    if cached and age < CACHE_TTL_SECONDS:
-        return cached
-
+    # Cache taze veya mevcut
     if cached:
-        return cached
+        if age < CACHE_TTL_SECONDS:
+            return cached
+        else:
+            # Bayat ama yine de döndür (bg thread zaten yeniliyor)
+            return cached
 
+    # Hiç cache yok, placeholder döndür
     return _placeholder_prices()
 
 
@@ -410,7 +487,6 @@ def index():
 
 @app.route("/feed")
 def feed():
-    # NOT: burada yfinance çağırmıyoruz -> worker timeout riski yok.
     events = (
         db.session.query(FeedEvent)
         .order_by(FeedEvent.score.desc(), FeedEvent.created_at.desc())
@@ -480,7 +556,6 @@ def settings():
     return render_template("settings.html", user=u)
 
 
-# Twitter tarzı profil: /@username
 @app.route("/@<username>")
 def profile(username):
     username = username.lower()
@@ -799,7 +874,7 @@ def follow_user(username):
         .first()
     )
     if existing:
-        db.session.delete(existing)  # unfollow
+        db.session.delete(existing)
     else:
         db.session.add(Follow(follower_id=me.id, following_id=target.id))
 
