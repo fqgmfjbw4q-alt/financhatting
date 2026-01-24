@@ -608,67 +608,28 @@ def symbol_page(symbol_key):
 # ----------------------------
 # Routes: Auth
 # ----------------------------
-@app.route("/auth/register", methods=["GET", "POST"])
+# ----------------------------
+# Routes: Auth Pages (Sadece sayfa render eder, işlem JSON API'de)
+# ----------------------------
+@app.route("/register")
 def register():
-    if request.method == "POST":
-        username = (request.form.get("username") or "").strip().lower()
-        full_name = (request.form.get("full_name") or "").strip()
-        password = request.form.get("password") or ""
-
-        if not username_is_valid(username):
-            flash("Kullanıcı adı geçersiz. (3-32, a-z 0-9 _ .)", "err")
-            return redirect(url_for("register"))
-        if not full_name or len(full_name) < 2:
-            flash("İsim geçersiz.", "err")
-            return redirect(url_for("register"))
-        if len(password) < 6:
-            flash("Şifre en az 6 karakter olmalı.", "err")
-            return redirect(url_for("register"))
-
-        exists = db.session.query(User).filter_by(username=username).first()
-        if exists:
-            flash("Bu kullanıcı adı alınmış.", "err")
-            return redirect(url_for("register"))
-
-        u = User(
-            username=username,
-            full_name=full_name[:100],
-            password_hash=generate_password_hash(password),
-            avatar_type="ui",
-        )
-        db.session.add(u)
-        db.session.commit()
-
-        session["user_id"] = u.id
-        flash("Kayıt başarılı!", "ok")
-        return redirect(url_for("index"))
-
+    """Kayıt sayfası (asıl kayıt /api/auth/register'da)"""
     return render_template("register.html", user=current_user())
 
 
-@app.route("/auth/login", methods=["GET", "POST"])
+@app.route("/login")
 def login():
-    if request.method == "POST":
-        username = (request.form.get("username") or "").strip().lower()
-        password = request.form.get("password") or ""
-
-        u = db.session.query(User).filter_by(username=username).first()
-        if not u or not u.password_hash or not check_password_hash(u.password_hash, password):
-            flash("Hatalı kullanıcı adı veya şifre.", "err")
-            return redirect(url_for("login"))
-
-        session["user_id"] = u.id
-        flash("Giriş başarılı.", "ok")
-        nxt = request.args.get("next") or url_for("index")
-        return redirect(nxt)
-
+    """Giriş sayfası (asıl giriş /api/auth/login'de)"""
     return render_template("login.html", user=current_user())
 
 
-@app.route("/auth/logout")
+@app.route("/logout")
 def logout():
+    """Çıkış yap"""
     session.clear()
+    flash("Çıkış yapıldı.", "ok")
     return redirect(url_for("index"))
+
 
 
 @app.route("/auth/google")
