@@ -1,4 +1,3 @@
-<!-- templates/feed.html -->
 {% extends "base.html" %}
 
 {% block title %}Feed • Financhatting{% endblock %}
@@ -45,7 +44,7 @@
               <span>🖼️ Foto</span>
               <input id="postImage" type="file" accept="image/*" disabled />
             </label>
-            <span class="hint">Foto yükleme v2.1’de (Cloudinary/S3).</span>
+            <span class="hint">Foto yükleme v2.1'de (Cloudinary/S3).</span>
           </div>
 
           <div class="composer-right">
@@ -176,12 +175,12 @@
   .who .sub { color: var(--muted2); font-size: .92em; display:flex; gap: 8px; align-items:center; flex-wrap:wrap; }
   .badge {
     display:inline-flex; align-items:center; gap:6px;
-    padding: 3px 10px;
+    padding: 2px 8px;
     border-radius: 999px;
     border: 1px solid var(--border);
     background: rgba(15, 23, 42, 0.35);
     color: var(--muted);
-    font-size: .85em;
+    font-size: .8em;
     font-weight: 700;
   }
   .badge.green { border-color: rgba(16,185,129,.55); color: var(--green); }
@@ -216,23 +215,20 @@
   .stars-count { color: var(--muted2); font-variant-numeric: tabular-nums; font-size: .92em; }
 
   .link {
-    .link {
-  color: var(--muted);
-  border: 1px solid var(--border);
-  background: rgba(15, 23, 42, 0.35);
-  padding: 6px 10px; /* ✅ 8px → 6px */
-  border-radius: 999px;
-  text-decoration:none;
-  font-weight: 600; /* ✅ 700 → 600 */
-  font-size: 0.85em; /* ✅ Yeni - küçült */
-  transition: transform .15s ease, border-color .2s ease;
-}
-
-.badge {
-  padding: 2px 8px; /* ✅ 3px → 2px */
-  font-size: 0.8em; /* ✅ 0.85em → 0.8em */
-}
-
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.35);
+    padding: 6px 10px;
+    border-radius: 999px;
+    text-decoration:none;
+    font-weight: 600;
+    font-size: 0.85em;
+    transition: transform .15s ease, border-color .2s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
   .link:hover { transform: translateY(-1px); border-color: rgba(59,130,246,.55); color: var(--text); }
 
   .loading { text-align:center; padding: 40px 0; color: var(--muted2); }
@@ -270,7 +266,6 @@
 
 {% block extra_js %}
 <script>
-  // ---- Helpers
   const $ = (q) => document.querySelector(q);
   const $$ = (q) => Array.from(document.querySelectorAll(q));
 
@@ -299,10 +294,8 @@
     setTimeout(() => { el.style.display = "none"; }, 4500);
   }
 
-  // ---- State
   let currentFilter = "all";
 
-  // ---- API calls
   async function apiGet(url) {
     const r = await fetch(url, { credentials: "include" });
     if (!r.ok) throw new Error(await r.text());
@@ -319,149 +312,183 @@
     if (!r.ok) throw new Error(await r.text());
     return await r.json();
   }
+
   function buildStars({ kind, id, myStars, avgStars, count }) {
-  const safeKind = kind === "alert" ? "alert" : "post";
-  const safeId = Number(id);
+    const safeKind = kind === "alert" ? "alert" : "post";
+    const safeId = Number(id);
 
-  const wrap = document.createElement("div");
-  wrap.className = "stars";
-  wrap.setAttribute("data-kind", safeKind);
-  wrap.setAttribute("data-id", safeId);
+    const wrap = document.createElement("div");
+    wrap.className = "stars";
+    wrap.setAttribute("data-kind", safeKind);
+    wrap.setAttribute("data-id", safeId);
 
-  for (let s = 1; s <= 5; s++) {
-    const b = document.createElement("div");
-    // ✅ s <= myStars (4 yıldız verdiyse 1,2,3,4 dolu)
-    b.className = "star-btn" + (s <= myStars ? " active" : "");
-    b.title = `${s} yıldız`;
-    b.textContent = "★";
-    b.onclick = async () => {
-      try {
-        const res = await apiPost("/api/rate", { kind: safeKind, id: safeId, stars: s });
-        updateStarsUI(wrap, res.my, res.avg, res.count);
-      } catch (error) {
-        showComposerError("Oylama için giriş yapman gerekebilir.");
-      }
-    };
-    wrap.appendChild(b);
+    for (let s = 1; s <= 5; s++) {
+      const b = document.createElement("div");
+      b.className = "star-btn" + (s <= myStars ? " active" : "");
+      b.title = `${s} yıldız`;
+      b.textContent = "★";
+      b.onclick = async () => {
+        try {
+          const res = await apiPost("/api/rate", { kind: safeKind, id: safeId, stars: s });
+          updateStarsUI(wrap, res.my, res.avg, res.count);
+        } catch (error) {
+          showComposerError("Oylama için giriş yapman gerekebilir.");
+        }
+      };
+      wrap.appendChild(b);
+    }
+
+    const c = document.createElement("span");
+    c.className = "stars-count";
+    c.textContent = `Ort: ${Number(avgStars || 0).toFixed(1)} • Oy: ${count || 0}`;
+    wrap.appendChild(c);
+
+    return wrap;
   }
-
-  const c = document.createElement("span");
-  c.className = "stars-count";
-  c.textContent = `Ort: ${Number(avgStars || 0).toFixed(1)} • Oy: ${count || 0}`;
-  wrap.appendChild(c);
-
-  return wrap;
-}
-
-function updateStarsUI(starsWrap, my, avg, count) {
-  const btns = Array.from(starsWrap.querySelectorAll(".star-btn"));
-  btns.forEach((b, idx) => {
-    const s = idx + 1;
-    // ✅ s <= my (4 yıldız verdiyse 1,2,3,4 dolu)
-    b.classList.toggle("active", s <= my);
-  });
-  const c = starsWrap.querySelector(".stars-count");
-  if (c) c.textContent = `Ort: ${Number(avg || 0).toFixed(1)} • Oy: ${count || 0}`;
-}
-
-
-  // ---- Render
-  
 
   function updateStarsUI(starsWrap, my, avg, count) {
     const btns = Array.from(starsWrap.querySelectorAll(".star-btn"));
     btns.forEach((b, idx) => {
       const s = idx + 1;
-      b.classList.toggle("active", my === s);
+      b.classList.toggle("active", s <= my);
     });
     const c = starsWrap.querySelector(".stars-count");
     if (c) c.textContent = `Ort: ${Number(avg || 0).toFixed(1)} • Oy: ${count || 0}`;
   }
 
   function renderFeedItem(item) {
-    function renderFeedItem(item) {
-  // ... mevcut kod ...
-  
-  const isMyPost = item.user && window.currentUserId === item.user.id;
-  
-  const editDeleteBtns = (isMyPost && !isAlert) ? `
-    <button class="link edit-btn" data-id="${item.id}">✏️ Düzenle</button>
-    <button class="link delete-btn" data-id="${item.id}">🗑️ Sil</button>
-  ` : "";
+    const card = document.createElement("div");
+    card.className = "card feed-item";
 
-  card.innerHTML = `
-    <div class="feed-head">
-      <!-- mevcut head kodu -->
-    </div>
+    const isAlert = item.type === "alert";
+    const isMyPost = item.user && window.currentUserId === item.user.id;
 
-    <div class="content">${content.replaceAll("\n","<br>")}</div>
+    if (isAlert) {
+      const alert = item.alert;
+      const sym = (alert.symbol_key || "").toUpperCase();
+      const chg = Number(alert.change_pct || 0).toFixed(2);
+      const price = alert.price ? `₺${Number(alert.price).toFixed(2)}` : "";
+      const badgeClass = chg >= 0 ? "green" : "red";
 
-    ${item.image_url ? `<div class="media"><img alt="media" src="${escHtml(item.image_url)}"></div>` : ""}
+      card.innerHTML = `
+        <div class="feed-head">
+          <div class="who">
+            <div class="mini-avatar"><img src="${avatarUrl("Alert")}" alt="alert" /></div>
+            <div class="meta">
+              <div class="name">🚨 Fiyat Uyarısı</div>
+              <div class="sub">
+                <span class="badge ${badgeClass}">${sym} ${chg >= 0 ? "+" : ""}${chg}%</span>
+                <span>${fmtTime(item.created_at)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="content">
+          ${sym} fiyatı ${alert.window || "1d"} içinde <strong>${chg >= 0 ? "+" : ""}${chg}%</strong> değişti. ${price ? `Son fiyat: ${price}` : ""}
+        </div>
+        <div class="actions">
+          <div class="left-actions">
+            <a class="link" href="/s/${encodeURIComponent(alert.symbol_key)}">🔎 ${sym} Sayfası</a>
+          </div>
+        </div>
+      `;
+    } else {
+      const user = item.user || {};
+      const fullName = escHtml(user.full_name || user.username || "Anonim");
+      const username = user.username || "anonim";
+      const content = escHtml(item.content || "");
+      const symbol = item.symbol_key ? item.symbol_key.toUpperCase() : null;
+      const linkTo = `/@${encodeURIComponent(username)}`;
+      const linkLabel = `@${username}`;
 
-    <div class="actions">
-      <div class="left-actions">
-        ${editDeleteBtns}
-        <a class="link" href="${linkTo}">🔎 ${linkLabel}</a>
-        ${(item.symbol_key || item.alert?.symbol_key) ? `<a class="link" href="/s/${encodeURIComponent(item.symbol_key || item.alert.symbol_key)}#comments">💬 Yorumlara Git</a>` : ``}
-      </div>
-      <div class="right-actions" id="starsMount"></div>
-    </div>
-  `;
+      const editDeleteBtns = isMyPost ? `
+        <button class="link edit-btn" data-id="${item.id}">✏️ Düzenle</button>
+        <button class="link delete-btn" data-id="${item.id}">🗑️ Sil</button>
+      ` : "";
 
-  // Edit/Delete event listeners
-  if (isMyPost && !isAlert) {
-    card.querySelector(".edit-btn")?.addEventListener("click", () => editPost(item.id));
-    card.querySelector(".delete-btn")?.addEventListener("click", () => deletePost(item.id));
+      card.innerHTML = `
+        <div class="feed-head">
+          <div class="who">
+            <div class="mini-avatar"><img src="${avatarUrl(fullName)}" alt="avatar" /></div>
+            <div class="meta">
+              <div class="name">${fullName}</div>
+              <div class="sub">
+                ${symbol ? `<span class="badge blue">${symbol}</span>` : ""}
+                <span>${fmtTime(item.created_at)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content">${content.replaceAll("\n","<br>")}</div>
+
+        ${item.image_url ? `<div class="media"><img alt="media" src="${escHtml(item.image_url)}"></div>` : ""}
+
+        <div class="actions">
+          <div class="left-actions">
+            ${editDeleteBtns}
+            <a class="link" href="${linkTo}">🔎 Profil</a>
+            ${symbol ? `<a class="link" href="/s/${encodeURIComponent(item.symbol_key)}#comments">💬 Yorumlar</a>` : ""}
+          </div>
+          <div class="right-actions" id="starsMount-${item.id}"></div>
+        </div>
+      `;
+
+      if (isMyPost) {
+        setTimeout(() => {
+          card.querySelector(".edit-btn")?.addEventListener("click", () => editPost(item.id));
+          card.querySelector(".delete-btn")?.addEventListener("click", () => deletePost(item.id));
+        }, 0);
+      }
+
+      setTimeout(() => {
+        const mount = card.querySelector(`#starsMount-${item.id}`);
+        if (mount) {
+          const stars = buildStars({
+            kind: "post",
+            id: item.id,
+            myStars: item.rating?.my || 0,
+            avgStars: item.rating?.avg || 0,
+            count: item.rating?.count || 0
+          });
+          mount.appendChild(stars);
+        }
+      }, 0);
+    }
+
+    return card;
   }
 
-  // ... mevcut mount kodu ...
-  
-  return card;
-}
-
-async function editPost(postId) {
-  const newContent = prompt("Yeni içerik:");
-  if (!newContent) return;
-  
-  try {
-    await fetch(`/api/posts/${postId}`, {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: newContent })
-    });
-    await loadFeed();
-  } catch (e) {
-    alert("Düzenleme başarısız.");
+  async function editPost(postId) {
+    const newContent = prompt("Yeni içerik:");
+    if (!newContent) return;
+    
+    try {
+      await fetch(`/api/posts/${postId}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: newContent })
+      });
+      await loadFeed();
+    } catch (e) {
+      alert("Düzenleme başarısız.");
+    }
   }
-}
 
-async function deletePost(postId) {
-  if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
-  
-  try {
-    await fetch(`/api/posts/${postId}`, {
-      method: "DELETE",
-      credentials: "include"
-    });
-    await loadFeed();
-  } catch (e) {
-    alert("Silme başarısız.");
+  async function deletePost(postId) {
+    if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
+    
+    try {
+      await fetch(`/api/posts/${postId}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      await loadFeed();
+    } catch (e) {
+      alert("Silme başarısız.");
+    }
   }
-}
-
-// loadMe() içinde currentUserId'yi global yap:
-async function loadMe() {
-  try {
-    const me = await apiGet("/api/me");
-    window.currentUserId = me?.id; // ✅ Global
-    const name = me?.full_name || me?.username || "User";
-    $("#meAvatarImg").src = avatarUrl(name);
-  } catch {
-    $("#meAvatarImg").src = avatarUrl("Guest");
-  }
-}
-
 
   function setLoading() {
     $("#feedList").innerHTML = `
@@ -480,12 +507,9 @@ async function loadMe() {
     $("#feedList").innerHTML = "";
   }
 
-  // ---- Load feed
   async function loadFeed() {
     setLoading();
     try {
-      // Backend'de şu endpoint olacak:
-      // GET /api/feed?filter=all|posts|alerts|hot
       const data = await apiGet(`/api/feed?filter=${encodeURIComponent(currentFilter)}`);
 
       const list = $("#feedList");
@@ -504,11 +528,10 @@ async function loadMe() {
       }
     } catch (e) {
       console.error(e);
-      setError("Feed yüklenemedi. (API henüz eklenmemiş olabilir.)");
+      setError("Feed yüklenemedi.");
     }
   }
 
-  // ---- Create post
   async function createPost() {
     const content = ($("#postContent").value || "").trim();
     const symbol = ($("#postSymbol").value || "").trim();
@@ -516,8 +539,6 @@ async function loadMe() {
 
     try {
       $("#btnPost").disabled = true;
-      // Backend'de şu endpoint olacak:
-      // POST /api/posts { content, symbol_key }
       await apiPost("/api/posts", { content, symbol_key: symbol || null });
       $("#postContent").value = "";
       $("#postSymbol").value = "";
@@ -525,13 +546,12 @@ async function loadMe() {
       await loadFeed();
     } catch (e) {
       console.error(e);
-      showComposerError("Paylaşım gönderilemedi. Giriş yapman gerekebilir (veya endpoint henüz aktif değil).");
+      showComposerError("Paylaşım gönderilemedi. Giriş yapman gerekebilir.");
     } finally {
       $("#btnPost").disabled = false;
     }
   }
 
-  // ---- UI wiring
   function wireFilters() {
     $$(".pill").forEach(p => {
       p.onclick = async () => {
@@ -557,26 +577,22 @@ async function loadMe() {
   }
 
   async function loadMe() {
-    // Backend'de şu endpoint olacak:
-    // GET /api/me -> { username, full_name }
     try {
       const me = await apiGet("/api/me");
+      window.currentUserId = me?.id;
       const name = me?.full_name || me?.username || "User";
       $("#meAvatarImg").src = avatarUrl(name);
     } catch {
-      // giriş yoksa
       $("#meAvatarImg").src = avatarUrl("Guest");
     }
   }
 
-  // init
   wireFilters();
   wireComposer();
   wireRefresh();
   loadMe();
   loadFeed();
 
-  // Feed'i sık sık yenileme: (opsiyonel)
   setInterval(loadFeed, 30000);
 </script>
 {% endblock %}
