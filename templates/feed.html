@@ -371,104 +371,89 @@ function updateStarsUI(starsWrap, my, avg, count) {
   }
 
   function renderFeedItem(item) {
-    // item shape (hedef):
-    // {
-    //   type: "post" | "alert",
-    //   id: 123,
-    //   created_at: "...",
-    //   user: { username:"mehmet", full_name:"Mehmet Bostancı" } (post için),
-    //   content: "...",
-    //   symbol_key: "BTC" (opsiyonel),
-    //   image_url: "..." (opsiyonel),
-    //   alert: { symbol_key:"BTC", change_pct: 21.3, window:"1d", price: 41234.1 } (alert için),
-    //   rating: { avg: 4.3, count: 12, my: 5 }
-    // }
+    function renderFeedItem(item) {
+  // ... mevcut kod ...
+  
+  const isMyPost = item.user && window.currentUserId === item.user.id;
+  
+  const editDeleteBtns = (isMyPost && !isAlert) ? `
+    <button class="link edit-btn" data-id="${item.id}">✏️ Düzenle</button>
+    <button class="link delete-btn" data-id="${item.id}">🗑️ Sil</button>
+  ` : "";
 
-    const card = document.createElement("div");
-    card.className = "card feed-item";
+  card.innerHTML = `
+    <div class="feed-head">
+      <!-- mevcut head kodu -->
+    </div>
 
-    const isAlert = item.type === "alert";
-    const created = fmtTime(item.created_at);
+    <div class="content">${content.replaceAll("\n","<br>")}</div>
 
-    const whoName = isAlert ? "Financhatting Alert" : (item.user?.full_name || item.user?.username || "Kullanıcı");
-    const whoUser = isAlert ? "@system" : ("@" + (item.user?.username || "user"));
+    ${item.image_url ? `<div class="media"><img alt="media" src="${escHtml(item.image_url)}"></div>` : ""}
 
-    const avatar = isAlert ? avatarUrl("Alert") : avatarUrl(whoName);
-
-    const symbolBadge = (item.symbol_key || item.alert?.symbol_key)
-      ? `<span class="badge blue">#${escHtml(item.symbol_key || item.alert?.symbol_key)}</span>`
-      : "";
-
-    let typeBadge = "";
-    if (isAlert) {
-      const pct = Number(item.alert?.change_pct || 0);
-      const cls = pct >= 0 ? "green" : "red";
-      typeBadge = `<span class="badge ${cls}">⚡ ${pct.toFixed(2)}%</span>`;
-    } else {
-      typeBadge = `<span class="badge green">📝 Post</span>`;
-    }
-
-    const titleRight = `<div class="sub">
-        ${typeBadge}
-        ${symbolBadge}
-        <span class="badge">${created}</span>
-      </div>`;
-
-    const content = isAlert
-      ? (() => {
-          const sym = escHtml(item.alert?.symbol_key || "");
-          const pct = Number(item.alert?.change_pct || 0).toFixed(2);
-          const price = item.alert?.price != null ? `• Fiyat: ${Number(item.alert.price).toLocaleString("tr-TR")}` : "";
-          const w = escHtml(item.alert?.window || "1d");
-          return `📣 <b>${sym}</b> için <b>%${pct}</b> değişim uyarısı (${w}) ${price}\n\nGrafiği görmek için sembol sayfasına gidebilirsin.`;
-        })()
-      : escHtml(item.content || "");
-
-    const linkTo = (item.symbol_key || item.alert?.symbol_key)
-      ? `/s/${encodeURIComponent(item.symbol_key || item.alert.symbol_key)}`
-      : (isAlert ? "#" : `/@${encodeURIComponent(item.user?.username || "")}`);
-
-    const linkLabel = (item.symbol_key || item.alert?.symbol_key) ? "Sembol Sayfası" : "Profil";
-
-    card.innerHTML = `
-      <div class="feed-head">
-        <div class="who">
-          <div class="mini-avatar"><img alt="avatar" src="${avatar}"></div>
-          <div class="meta">
-            <div class="name">${escHtml(whoName)}</div>
-            <div class="sub">
-              <span>${escHtml(whoUser)}</span>
-            </div>
-          </div>
-        </div>
-        <div>${titleRight}</div>
+    <div class="actions">
+      <div class="left-actions">
+        ${editDeleteBtns}
+        <a class="link" href="${linkTo}">🔎 ${linkLabel}</a>
+        ${(item.symbol_key || item.alert?.symbol_key) ? `<a class="link" href="/s/${encodeURIComponent(item.symbol_key || item.alert.symbol_key)}#comments">💬 Yorumlara Git</a>` : ``}
       </div>
+      <div class="right-actions" id="starsMount"></div>
+    </div>
+  `;
 
-      <div class="content">${content.replaceAll("\n","<br>")}</div>
-
-      ${item.image_url ? `<div class="media"><img alt="media" src="${escHtml(item.image_url)}"></div>` : ""}
-
-      <div class="actions">
-        <div class="left-actions">
-          <a class="link" href="${linkTo}">🔎 ${linkLabel}</a>
-          ${(item.symbol_key || item.alert?.symbol_key) ? `<a class="link" href="/s/${encodeURIComponent(item.symbol_key || item.alert.symbol_key)}#comments">💬 Yorumlara Git</a>` : ``}
-        </div>
-        <div class="right-actions" id="starsMount"></div>
-      </div>
-    `;
-
-    const mount = card.querySelector("#starsMount");
-    const rating = item.rating || {};
-    mount.appendChild(buildStars({
-      kind: isAlert ? "alert" : "post",
-      id: item.id,
-      myStars: rating.my || null,
-      avgStars: rating.avg || 0,
-      count: rating.count || 0
-    }));
-
-    return card;
+  // Edit/Delete event listeners
+  if (isMyPost && !isAlert) {
+    card.querySelector(".edit-btn")?.addEventListener("click", () => editPost(item.id));
+    card.querySelector(".delete-btn")?.addEventListener("click", () => deletePost(item.id));
   }
+
+  // ... mevcut mount kodu ...
+  
+  return card;
+}
+
+async function editPost(postId) {
+  const newContent = prompt("Yeni içerik:");
+  if (!newContent) return;
+  
+  try {
+    await fetch(`/api/posts/${postId}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: newContent })
+    });
+    await loadFeed();
+  } catch (e) {
+    alert("Düzenleme başarısız.");
+  }
+}
+
+async function deletePost(postId) {
+  if (!confirm("Bu gönderiyi silmek istediğine emin misin?")) return;
+  
+  try {
+    await fetch(`/api/posts/${postId}`, {
+      method: "DELETE",
+      credentials: "include"
+    });
+    await loadFeed();
+  } catch (e) {
+    alert("Silme başarısız.");
+  }
+}
+
+// loadMe() içinde currentUserId'yi global yap:
+async function loadMe() {
+  try {
+    const me = await apiGet("/api/me");
+    window.currentUserId = me?.id; // ✅ Global
+    const name = me?.full_name || me?.username || "User";
+    $("#meAvatarImg").src = avatarUrl(name);
+  } catch {
+    $("#meAvatarImg").src = avatarUrl("Guest");
+  }
+}
+
 
   function setLoading() {
     $("#feedList").innerHTML = `
