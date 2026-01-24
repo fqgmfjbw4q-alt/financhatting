@@ -135,7 +135,49 @@
 
   async function loadProfile(){
     try{
-      $("#profileError").style.display="none";
+    
+      async function loadProfile(){
+  try{
+    $("#profileError").style.display="none";
+    const data = await apiGet(`/api/profile/${encodeURIComponent(username)}`);
+
+    $("#fullName").textContent = data.full_name || data.username || username;
+    $("#handle").textContent = "@"+(data.username||username);
+    $("#bio").textContent = data.bio || "";
+    $("#followers").textContent = `👥 ${Number(data.followers||0)} takipçi`;
+    $("#following").textContent = `➕ ${Number(data.following||0)} takip`;
+
+    $("#avatarImg").src = data.avatar_url || avatarUrl(data.full_name || data.username);
+
+    // ✅ Takip/Düzenle butonları
+    if (data.is_me){
+      $("#btnEdit").style.display = "inline-flex";
+      $("#btnFollow").style.display = "none";
+    } else {
+      $("#btnFollow").style.display = "inline-flex";
+      $("#btnFollow").textContent = data.is_following ? "Takibi Bırak" : "Takip Et";
+      $("#btnFollow").onclick = async ()=>{
+        try{
+          const action = data.is_following ? "unfollow" : "follow";
+          const res = await apiPost("/api/follow", { username: data.username, action });
+          data.is_following = res.is_following;
+          $("#btnFollow").textContent = data.is_following ? "Takibi Bırak" : "Takip Et";
+          $("#followers").textContent = `👥 ${Number(res.followers||data.followers||0)} takipçi`;
+        }catch(e){
+          showError("Takip işlemi başarısız. Giriş yapman gerekebilir.");
+        }
+      };
+      $("#btnEdit").style.display = "none";
+    }
+
+    // ... posts ve comments render ...
+  }catch(e){
+    console.error(e);
+    showError("Profil yüklenemedi.");
+  }
+}
+
+          $("#profileError").style.display="none";
       // expected: GET /api/profile/<username>
 @app.route("/api/profile/<username>")
 def api_profile(username):
